@@ -1,0 +1,10 @@
+README
+======
+
+Directories
+
+* ./experiments/ -- contains source code and results for the query accuracy and
+  timings.
+
+
+$Id$
