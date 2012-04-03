@@ -977,6 +977,7 @@ def line_is_connected(line):
 
     return True
 
+
 def graph_is_connected(g):
     """
 
