@@ -173,6 +173,8 @@ def parse_options():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-q", "--query", default=None)
+    parser.add_argument("-s", "--simpleoutput", default=False,
+        action="store_true")
     options = parser.parse_args()
 
     if len(sys.argv) < 2:
@@ -190,26 +192,28 @@ def main():
 
     query_str, _, (sorted_results, num_sheets, num_pdb_ids) = do_query(bmtext)
 
-    print "# QUERY RESULTS"
-    print "# Query:"
-    print "#"
+    if not options.simpleoutput:
+        print "# QUERY RESULTS"
+        print "# Query:"
+        print "#"
 
-    print os.linesep.join("#\t%s" % l for l in query_str.splitlines())
+        print os.linesep.join("#\t%s" % l for l in query_str.splitlines())
 
-    print "#"
-    print "# No. of sheets: %d" % num_sheets
-    print "# No. of pdb ids: %d" % num_pdb_ids
-    print 
+        print "#"
+        print "# No. of sheets: %d" % num_sheets
+        print "# No. of pdb ids: %d" % num_pdb_ids
+        print 
 
     for sheet_size, is_barrel, sheet_line, matching_descs in sorted_results:
-        print os.linesep.join(sheet_line.split(","))
-        print
-        for m in matching_descs:
-            print "METADATA" + "," + ",".join(m)
+        if not options.simpleoutput:
+            print os.linesep.join(sheet_line.split(","))
+            print
+            for m in matching_descs:
+                print "METADATA" + "," + ",".join(m)
 
-        print
-        print "---"
-        print
+            print
+            print "---"
+            print
 
 
     return
