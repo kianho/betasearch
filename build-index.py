@@ -16,6 +16,7 @@ import time
 import datetime
 import numpy
 import shelve
+import commands
 
 from collections import defaultdict
 from whoosh.fields import Schema, TEXT, STORED
@@ -81,6 +82,10 @@ if __name__ == "__main__":
         doc_id, entries = line.split(":")
         mat = numpy.array(map(lambda row : list(row), entries.split(",")))
 
+        if len(mat.shape) != 2:
+            print
+            print line
+
         shelf[doc_id] = line
 
         record = { "trimers" : defaultdict(set),
@@ -91,20 +96,28 @@ if __name__ == "__main__":
         for trimer in trimers_gen(mat):
             update_disk_record(record, trimer)
 
-        writer.add_document(sheet_id=u"%s" % doc_id,
-                            trimers=u"%s" % " ".join(t.id_str for t in
-                                                     record["trimers-list"]))
+        try:
+            writer.add_document(sheet_id=u"%s" % doc_id,
+                                trimers=u"%s" % " ".join(t.id_str for t in
+                                                         record["trimers-list"]))
 
-        f = open(os.path.join(trimers_dir, "%s.record" % doc_id), 'w')
-        cPickle.dump(record, f)
-        f.close()
+            f = open(os.path.join(trimers_dir, "%s.record" % doc_id), 'w')
+            cPickle.dump(record, f)
+            f.close()
 
-        if options.verbose:
-            print doc_id, "indexed sucessfully"
+            if options.verbose:
+                print doc_id, "index OK"
+        except:
+            if options.verbose:
+                print doc_id, "index FAIL"
 
     shelf.close()
     writer.commit()
 
     finish_time = time.time()
 
-    print "elapsed time:", datetime.timedelta(seconds=finish_time - start_time)
+    if options.verbose:
+        print
+        print "elapsed time:", datetime.timedelta(seconds=finish_time - start_time)
+        print "approx. index size:", \
+                commands.getoutput("du -hs %s" % options.index_dir).split()[0]
