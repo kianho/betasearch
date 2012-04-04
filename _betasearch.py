@@ -491,15 +491,19 @@ class Query:
         return
 
     def verify(self, results, trimers_dir):
+        t0 = time.clock()
+
+        if len(results) == 0:
+            t1 = time.clock()
+            yield "None", t1 - t0
+            return
+
         if len(self._trimers) == 1:
-            t0 = time.clock()
             for hit in results:
                 t1 = time.clock()
                 yield str(hit["sheet_id"]), t1 - t0
                 t0 = t1
             return
-
-        t0 = time.clock()
 
         if self._first_l_trimer != None:
             root = self._first_l_trimer
@@ -645,15 +649,10 @@ class Query:
                 if found:
                     break
 
-            t1 = time.clock()
-
             if found:
+                t1 = time.clock()
                 yield sheet_id, t1 - t0
-            else:
-
-                yield None, t1 - t0
-
-            t0 = time.clock()
+                t0 = time.clock()
                 
         return
 
