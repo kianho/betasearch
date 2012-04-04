@@ -118,8 +118,8 @@ def run_query(line):
         query_ = parser_.parse(q.get_whoosh_query_str())
         results_ = searcher_.search(query_, limit=None)
 
-        for sheet_id in q.verify(results_, req_paths["trimers-dir"]):
-            yield sheet_id
+        for sheet_id, cpu_time in q.verify(results_, req_paths["trimers-dir"]):
+            yield sheet_id, cpu_time
 
     qf.close()
 
@@ -167,11 +167,14 @@ if __name__ == "__main__":
 
     for line in sys.stdin:
         query_id, bmtext = line.strip().split(":")
-        print query_id,
+        sheet_ids = []
+        total_cpu_time = 0.0
+
         try:
-            for sheet_id in do_query(bmtext):
-                print sheet_id,
+            for sheet_id, cpu_time in do_query(bmtext):
+                sheet_ids.append(sheet_id)
+                total_cpu_time += cpu_time
         except:
-            print "FAIL",
-        print
-        sys.exit(0)
+            sheet_ids = [ "FAIL" ]
+
+        print query_id, total_cpu_time, " ".join(sheet_ids)

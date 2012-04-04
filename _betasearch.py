@@ -17,6 +17,7 @@ import cPickle
 import pprint
 import copy
 import re
+import time
 
 from collections import defaultdict, deque
 from itertools import product
@@ -491,9 +492,14 @@ class Query:
 
     def verify(self, results, trimers_dir):
         if len(self._trimers) == 1:
+            t0 = time.clock()
             for hit in results:
-                yield str(hit["sheet_id"])
+                t1 = time.clock()
+                yield str(hit["sheet_id"]), t1 - t0
+                t0 = t1
             return
+
+        t0 = time.clock()
 
         if self._first_l_trimer != None:
             root = self._first_l_trimer
@@ -639,8 +645,15 @@ class Query:
                 if found:
                     break
 
+            t1 = time.clock()
+
             if found:
-                yield sheet_id
+                yield sheet_id, t1 - t0
+            else:
+
+                yield None, t1 - t0
+
+            t0 = time.clock()
                 
         return
 
