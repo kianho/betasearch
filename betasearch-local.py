@@ -15,6 +15,8 @@ import shelve
 import _betasearch as bs
 import networkx as nx
 import argparse
+import pprint
+import numpy as np
 
 from collections import defaultdict
 from _betasearch import *
@@ -27,7 +29,7 @@ QUERY_LOG = "./queries.log"
 
 
 def get_pdb_id(sheet_id):
-    return sheet_id[:4].lower()
+    return sheet_id.split("-")[1].lower()
 
 
 def validate_query(bmtext):
@@ -91,12 +93,8 @@ def validate_query(bmtext):
 
 
 def run_query(line):
-    index_type = "normal-indices"
-    req_paths = { "whoosh-dir" : os.path.join(index_type, "whoosh"), 
-                  "seqs-dir" : os.path.join(index_type, "seqs"),
-                  "trimers-dir" : os.path.join(index_type, "trimers"),
-                  "lines-db" : os.path.join(index_type, "lines.db"),
-                  "chain-info-db" : os.path.join(index_type, "chain-info.db")}
+    req_paths = { "whoosh-dir" : os.path.join(options.indexdir, "whoosh"), 
+                  "trimers-dir" : os.path.join(options.indexdir, "trimers") }
 
     line = line.upper()
 
@@ -105,8 +103,6 @@ def run_query(line):
     pdb_ids = set()
 
     expansions = bs.enforced_wc_expansions_iter(line)
-    bm_shelf = shelve.open(req_paths["lines-db"], 'r')
-    ch_info = shelve.open(req_paths["chain-info-db"], "r")
 
     qf = open(QUERY_LOG, "a")
 
@@ -123,27 +119,11 @@ def run_query(line):
         results_ = searcher_.search(query_, limit=None)
 
         for sheet_id in q.verify(results_, req_paths["trimers-dir"]):
-            num_sheets += 1
-            pdb_ids.add(get_pdb_id(sheet_id))
-            chain_info = ch_info[sheet_id[:-2]]
-            raw_line = bm_shelf[sheet_id]
-            is_barrel = False if raw_line.split(":")[-3] == 'f' else True
-            sheet_size = int(raw_line.split(":")[-2])
-            sheet_line = raw_line.split(":")[-1]
-            identical_sheets[(sheet_size, sheet_line, is_barrel)].append(
-                (sheet_id, chain_info["org-name"], chain_info["mol-name"]))
+            yield sheet_id
 
     qf.close()
 
-    bm_shelf.close()
-    sorted_results = []
-
-    for key in sorted(identical_sheets.iterkeys()):
-        sheet_size, sheet_line, is_barrel = key
-        val = identical_sheets[key]
-        sorted_results.append((sheet_size, is_barrel, sheet_line, val))
-
-    return sorted_results, num_sheets, len(pdb_ids)
+    return 
 
 
 def do_query(query_str):
@@ -157,9 +137,9 @@ def do_query(query_str):
         query_str = response_text
 
     if not is_valid:
-        return (query_str, False, ([], 0, 0))
+        return
 
-    return (query_str, True, run_query(response_text))
+    return run_query(response_text)
 
 
 def parse_options():
@@ -172,9 +152,7 @@ def parse_options():
     """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-q", "--query", default=None)
-    parser.add_argument("-s", "--simpleoutput", default=False,
-        action="store_true")
+    parser.add_argument("-i", "--indexdir")
     options = parser.parse_args()
 
     if len(sys.argv) < 2:
@@ -184,40 +162,16 @@ def parse_options():
     return options
 
 
-def main():
+if __name__ == "__main__":
     options = parse_options()
 
-    with open(options.query) as f:
-        bmtext = ",".join(x.strip() for x in f.xreadlines())
-
-    query_str, _, (sorted_results, num_sheets, num_pdb_ids) = do_query(bmtext)
-
-    if not options.simpleoutput:
-        print "# QUERY RESULTS"
-        print "# Query:"
-        print "#"
-
-        print os.linesep.join("#\t%s" % l for l in query_str.splitlines())
-
-        print "#"
-        print "# No. of sheets: %d" % num_sheets
-        print "# No. of pdb ids: %d" % num_pdb_ids
-        print 
-
-    for sheet_size, is_barrel, sheet_line, matching_descs in sorted_results:
-        if not options.simpleoutput:
-            print os.linesep.join(sheet_line.split(","))
-            print
-            for m in matching_descs:
-                print "METADATA" + "," + ",".join(m)
-
-            print
-            print "---"
-            print
-
-
-    return
-
-
-if __name__ == "__main__":
-    main()
+    for line in sys.stdin:
+        query_id, bmtext = line.strip().split(":")
+        print query_id,
+        try:
+            for sheet_id in do_query(bmtext):
+                print sheet_id,
+        except:
+            print "FAIL",
+        print
+        sys.exit(0)
