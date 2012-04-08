@@ -25,7 +25,6 @@ from whoosh.index import open_dir
 from whoosh.qparser import QueryParser
 from whoosh.query import *
 
-QUERY_LOG = "./queries.log"
 
 
 def get_pdb_id(sheet_id):
@@ -104,10 +103,7 @@ def run_query(line):
 
     expansions = bs.enforced_wc_expansions_iter(line)
 
-    qf = open(QUERY_LOG, "a")
-
     for exp_line in expansions:
-        qf.write(exp_line + "\n")
         q = bs.Query(exp_line)
 
         index_ = open_dir(req_paths["whoosh-dir"])
@@ -120,8 +116,6 @@ def run_query(line):
 
         for sheet_id, cpu_time in q.verify(results_, req_paths["trimers-dir"]):
             yield sheet_id, cpu_time
-
-    qf.close()
 
     return 
 
@@ -175,6 +169,9 @@ if __name__ == "__main__":
                 sheet_ids.append(sheet_id)
                 total_cpu_time += cpu_time
         except:
-            sheet_ids = [ "FAIL" ]
+            print "%s\t%09.4f\tEXIT_FAILURE" % \
+                    (query_id, total_cpu_time)
+            continue
 
-        print query_id, total_cpu_time, " ".join(sheet_ids)
+        print "%s\t%09.4f\t%s" % \
+                (query_id, total_cpu_time, ",".join("%s:1.0000" % s for s in sheet_ids))
