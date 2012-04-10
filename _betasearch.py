@@ -491,18 +491,20 @@ class Query:
         return
 
     def verify(self, results, trimers_dir):
-        t0 = time.clock()
+#       t0 = time.clock()
 
         if len(results) == 0:
-            t1 = time.clock()
-            yield "None", t1 - t0
+#           t1 = time.clock()
+#            yield "None", t1 - t0
+            yield "None"
             return
 
         if len(self._trimers) == 1:
             for hit in results:
-                t1 = time.clock()
-                yield str(hit["sheet_id"]), t1 - t0
-                t0 = t1
+#               t1 = time.clock()
+#               yield str(hit["sheet_id"]), t1 - t0
+                yield str(hit["sheet_id"])
+#               t0 = t1
             return
 
         if self._first_l_trimer != None:
@@ -516,10 +518,6 @@ class Query:
             sheet_id = str(hit["sheet_id"]) 
             found = False
 
-            # unpickle the trimer instances dictionary for this sheet-id
-            #   disk_record["trimers"  ][<id-str>] -> set(<Trimer objects>) 
-            #   disk_record["row-index"][<key>   ] -> <Trimer obj>
-            #   disk_record["col-index"][<key>   ] -> <Trimer obj>
             f = open(os.path.join(trimers_dir, "%s.record" % sheet_id))
             disk_record = cPickle.load(f)
             f.close()
@@ -650,9 +648,10 @@ class Query:
                     break
 
             if found:
-                t1 = time.clock()
-                yield sheet_id, t1 - t0
-                t0 = time.clock()
+                yield sheet_id
+#               t1 = time.clock()
+#               yield sheet_id, t1 - t0
+#               t0 = time.clock()
                 
         return
 
