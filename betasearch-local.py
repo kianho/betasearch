@@ -139,6 +139,8 @@ def parse_options():
     """
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-q", "--queries")
+    parser.add_argument("-s", "--singlequery")
     parser.add_argument("-i", "--indexdir")
     options = parser.parse_args()
 
@@ -148,20 +150,29 @@ def parse_options():
 
     return options
 
+def run(line):
+    query_id, bmtext = line.strip().split(":")
+    sheet_ids = []
+
+    try:
+        for sheet_id in do_query(bmtext):
+            sheet_ids.append(sheet_id)
+    except:
+        print "%s\tEXIT_FAILURE" % query_id
+        return
+
+    print "%s\t%s" % \
+            (query_id, "\t".join("%s:1.0000" % s for s in sheet_ids))
+
+    return 
+
 
 if __name__ == "__main__":
     options = parse_options()
 
-    for line in sys.stdin:
-        query_id, bmtext = line.strip().split(":")
-        sheet_ids = []
-
-        try:
-            for sheet_id in do_query(bmtext):
-                sheet_ids.append(sheet_id)
-        except:
-            print "%s\tEXIT_FAILURE" % query_id
-            continue
-
-        print "%s\t%s" % \
-                (query_id, "\t".join("%s:1.0000" % s for s in sheet_ids))
+    if options.singlequery:
+        run(options.singlequery)
+    elif options.queries:
+        with open(options.queries, "rb") as f:
+            for line in f:
+                run(line)
