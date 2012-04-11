@@ -95,27 +95,29 @@ def run_query(line):
     req_paths = { "whoosh-dir" : os.path.join(options.indexdir, "whoosh"), 
                   "trimers-dir" : os.path.join(options.indexdir, "trimers") }
 
-    line = line.upper()
+#   line = line.upper()
 
-    identical_sheets = defaultdict(list)
-    num_sheets = 0
-    pdb_ids = set()
+#   identical_sheets = defaultdict(list)
+#   num_sheets = 0
+#   pdb_ids = set()
 
-    expansions = bs.enforced_wc_expansions_iter(line)
+#   expansions = bs.enforced_wc_expansions_iter(line)
 
-    for exp_line in expansions:
-        q = bs.Query(exp_line)
+#   for exp_line in expansions:
+#       q = bs.Query(exp_line)
+    q = bs.Query(line)
 
-        index_ = open_dir(req_paths["whoosh-dir"])
-        reader_ = index_.reader()
-        searcher_ = index_.searcher()
+    index_ = open_dir(req_paths["whoosh-dir"])
+    reader_ = index_.reader()
+    searcher_ = index_.searcher()
 
-        parser_ = QueryParser("trimers", index_.schema)
-        query_ = parser_.parse(q.get_whoosh_query_str())
-        results_ = searcher_.search(query_, limit=None)
+    parser_ = QueryParser("trimers", index_.schema)
+    query_ = parser_.parse(q.get_whoosh_query_str())
+    results_ = searcher_.search(query_, limit=None)
 
-        for sheet_id, cpu_time in q.verify(results_, req_paths["trimers-dir"]):
-            yield sheet_id, cpu_time
+#       for sheet_id, cpu_time in q.verify(results_, req_paths["trimers-dir"]):
+    for sheet_id in q.verify(results_, req_paths["trimers-dir"]):
+        yield sheet_id
 
     return 
 
@@ -124,16 +126,7 @@ def do_query(query_str):
     """
     """
 
-    is_valid, response_text = validate_query(query_str)
-    if is_valid:
-        query_str = "\n".join(response_text[1:].split(","))
-    else:
-        query_str = response_text
-
-    if not is_valid:
-        return
-
-    return run_query(response_text)
+    return run_query(":" + query_str)
 
 
 def parse_options():
@@ -146,6 +139,8 @@ def parse_options():
     """
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-q", "--queries")
+    parser.add_argument("-s", "--singlequery")
     parser.add_argument("-i", "--indexdir")
     options = parser.parse_args()
 
@@ -155,23 +150,29 @@ def parse_options():
 
     return options
 
+def run(line):
+    query_id, bmtext = line.strip().split(":")
+    sheet_ids = []
+
+    try:
+        for sheet_id in do_query(bmtext):
+            sheet_ids.append(sheet_id)
+    except:
+        print "%s\tEXIT_FAILURE" % query_id
+        return
+
+    print "%s\t%s" % \
+            (query_id, "\t".join("%s:1.0000" % s for s in sheet_ids))
+
+    return 
+
 
 if __name__ == "__main__":
     options = parse_options()
 
-    for line in sys.stdin:
-        query_id, bmtext = line.strip().split(":")
-        sheet_ids = []
-        total_cpu_time = 0.0
-
-        try:
-            for sheet_id, cpu_time in do_query(bmtext):
-                sheet_ids.append(sheet_id)
-                total_cpu_time += cpu_time
-        except:
-            print "%s\t%09.4f\tEXIT_FAILURE" % \
-                    (query_id, total_cpu_time)
-            continue
-
-        print "%s\t%09.4f\t%s" % \
-                (query_id, total_cpu_time, ",".join("%s:1.0000" % s for s in sheet_ids))
+    if options.singlequery:
+        run(options.singlequery)
+    elif options.queries:
+        with open(options.queries, "rb") as f:
+            for line in f:
+                run(line)
