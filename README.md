@@ -18,5 +18,10 @@ Directories
         - Contains the raw timings and various other query evaluations performed
           in our experiments.
 
+* `./manuscript`
+    - Contains the BMC manuscript of the BetaSearch paper. The manuscript is
+      writting in latex and includes a number of figures, plots, and other
+      supplementary materials.
+
 
 `$Id$`
