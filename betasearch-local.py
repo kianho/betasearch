@@ -25,6 +25,7 @@ from whoosh.index import open_dir
 from whoosh.qparser import QueryParser
 from whoosh.query import *
 
+DEFAULT_INDEX = os.path.expanduser("~/workspaces/betasearch-py-local/experiments/data/betasearch/astral95_bmats_db/")
 
 
 def get_pdb_id(sheet_id):
@@ -91,9 +92,9 @@ def validate_query(bmtext):
     return True, ":" + bm_line
 
 
-def run_query(line):
-    req_paths = { "whoosh-dir" : os.path.join(options.indexdir, "whoosh"), 
-                  "trimers-dir" : os.path.join(options.indexdir, "trimers") }
+def run_query(line, index_dir=DEFAULT_INDEX):
+    req_paths = { "whoosh-dir" : os.path.join(index_dir, "whoosh"), 
+                  "trimers-dir" : os.path.join(index_dir, "trimers") }
 
 #   line = line.upper()
 
@@ -122,11 +123,11 @@ def run_query(line):
     return 
 
 
-def do_query(query_str):
+def do_query(query_str, index_dir=DEFAULT_INDEX):
     """
     """
 
-    return run_query(":" + query_str)
+    return run_query(":" + query_str, index_dir)
 
 
 def parse_options():
@@ -142,6 +143,10 @@ def parse_options():
     parser.add_argument("-q", "--queries")
     parser.add_argument("-s", "--singlequery")
     parser.add_argument("-i", "--indexdir")
+    parser.add_argument("--validate", default=False, action="store_true")
+    parser.add_argument("--stdin", default=False, action="store_true",
+            help="Read queries from stdin.")
+    parser.add_argument("--DEBUG", default=False, action="store_true")
     options = parser.parse_args()
 
     if len(sys.argv) < 2:
@@ -150,29 +155,71 @@ def parse_options():
 
     return options
 
-def run(line):
+
+def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=False):
+    """Run a single query defined on a single line.
+
+    Arguments:
+        line -- the query specified in the form:
+                    "sheet-2332-A-000:H-M,GPN"
+
+    Returns:
+        the number of hits (sheets matching the query).
+
+    """
+
     query_id, bmtext = line.strip().split(":")
     sheet_ids = []
 
-    try:
-        for sheet_id in do_query(bmtext):
+    if VALIDATE_QUERY:
+        is_valid, err_txt = validate_query(bmtext)
+
+        if not is_valid:
+            sys.stderr.write("ERROR: the query isn't valid\n")
+            sys.stderr.write("ERRLOG: %s\n" % err_txt) 
+            return 0
+
+    if DEBUG:
+        for sheet_id in do_query(bmtext, index_dir):
             sheet_ids.append(sheet_id)
-    except:
-        print "%s\tEXIT_FAILURE" % query_id
-        return
+    else:
+        try:
+            for sheet_id in do_query(bmtext, index_dir):
+                sheet_ids.append(sheet_id)
+        except:
+            if not QUIET:
+                print "%s\tEXIT_FAILURE" % query_id
+            return 0 
 
-    print "%s\t%s" % \
-            (query_id, "\t".join("%s:1.0000" % s for s in sheet_ids))
+        if not QUIET:
+            print "%s\t%s" % \
+                    (query_id, "\t".join("%s:1.0000" % s for s in sheet_ids))
 
-    return 
+        nhits = len(sheet_ids)
+
+    return nhits
 
 
 if __name__ == "__main__":
     options = parse_options()
 
-    if options.singlequery:
-        run(options.singlequery)
+    if options.stdin:
+        #
+        # Read the queries line-by-line from stdin.
+        #
+        for line in sys.stdin:
+            line = line.strip()
+            run(line, options.indexdir, options.validate, options.DEBUG)
+
+    elif options.singlequery:
+        # Run a single query from the --singlequery command line option
+        # argument.
+        run(options.singlequery, options.indexdir)
+
     elif options.queries:
+        #
+        # Run multiple queries from a single file.
+        #
         with open(options.queries, "rb") as f:
             for line in f:
-                run(line)
+                run(line, options.indexdir)
