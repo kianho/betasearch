@@ -18,6 +18,7 @@ import argparse
 import pprint
 import numpy as np
 
+from sys import stderr
 from collections import defaultdict
 from _betasearch import *
 
