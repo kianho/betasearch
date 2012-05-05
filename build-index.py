@@ -10,7 +10,6 @@ Description:
 
 import os
 import sys
-import optparse
 import cPickle
 import time
 import datetime
@@ -32,18 +31,19 @@ def parse_options():
        values. 
 
     """
+    import argparse
 
     usage_str = \
         "Usage: %prog"    
 
-    parser = optparse.OptionParser()
-    parser.add_option("-i", "--index_dir", default=None,
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--index_dir", required=True,
                         help="directory in which to store the indices.")
-    parser.add_option("-p", "--procs", default=1, type="int",
+    parser.add_argument("-p", "--procs", default=1, type=int,
                         help="no. of processors to use (default=1).")
-    parser.add_option("-l", "--limitmb", default=128, type="int",
+    parser.add_argument("-l", "--limitmb", default=128, type=int,
                         help="amount of RAM to use (default=128).")
-    parser.add_option("-v", "--verbose", default=False, action="store_true")
+    parser.add_argument("-v", "--verbose", default=False, action="store_true")
     options, _ = parser.parse_args()
 
     if len(sys.argv) < 2:
