@@ -491,20 +491,13 @@ class Query:
         return
 
     def verify(self, results, trimers_dir):
-#       t0 = time.clock()
-
         if len(results) == 0:
-#           t1 = time.clock()
-#            yield "None", t1 - t0
             yield "None"
             return
 
         if len(self._trimers) == 1:
             for hit in results:
-#               t1 = time.clock()
-#               yield str(hit["sheet_id"]), t1 - t0
                 yield str(hit["sheet_id"])
-#               t0 = t1
             return
 
         if self._first_l_trimer != None:
@@ -516,6 +509,9 @@ class Query:
 
         for hit in results:
             sheet_id = str(hit["sheet_id"]) 
+            molecule_name = str(hit["molecule_name"])
+            organism_common_name = str(hit["organism_common_name"])
+            organism_scientific_name = str(hit["organism_scientific_name"])
             found = False
 
             f = open(os.path.join(trimers_dir, "%s.record" % sheet_id))
@@ -648,7 +644,7 @@ class Query:
                     break
 
             if found:
-                yield sheet_id
+                yield sheet_id, molecule_name, organism_common_name, organism_scientific_name
 #               t1 = time.clock()
 #               yield sheet_id, t1 - t0
 #               t0 = time.clock()

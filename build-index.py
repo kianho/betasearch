@@ -33,9 +33,6 @@ def parse_options():
     """
     import argparse
 
-    usage_str = \
-        "Usage: %prog"    
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--index_dir", required=True,
                         help="directory in which to store the indices.")
@@ -44,7 +41,7 @@ def parse_options():
     parser.add_argument("-l", "--limitmb", default=128, type=int,
                         help="amount of RAM to use (default=128).")
     parser.add_argument("-v", "--verbose", default=False, action="store_true")
-    options, _ = parser.parse_args()
+    options = parser.parse_args()
 
     if len(sys.argv) < 2:
         parser.print_help()
@@ -64,10 +61,17 @@ if __name__ == "__main__":
     trimers_dir = os.path.join(options.index_dir, "trimers")
     lines_db = os.path.join(options.index_dir, "lines.db")
 
-    os.mkdir(whoosh_dir)
-    os.mkdir(trimers_dir)
+    if not os.path.isdir(whoosh_dir):
+        os.mkdir(whoosh_dir)
 
-    schema = Schema(sheet_id=STORED, trimers=TEXT(phrase=False))
+    if not os.path.isdir(trimers_dir):
+        os.mkdir(trimers_dir)
+
+    schema = Schema(sheet_id=STORED,
+            molecule_name=STORED,
+            organism_common_name=STORED,
+            organism_scientific_name=STORED,
+            trimers=TEXT(phrase=False))
     index_ = create_in(whoosh_dir, schema)
     writer = index_.writer(procs=options.procs, limitmb=options.limitmb)
 
@@ -79,14 +83,19 @@ if __name__ == "__main__":
     # TODO: description of beta-matrix format...
     for line in sys.stdin:
         line = line.strip()
-        doc_id, entries = line.split(":")
+        bmat_fields = line.split("^")
+
+        assert (len(bmat_fields) == 11), \
+                "ERROR: this line contains an insuffient number of fields (11) -- %s" % line
+
+        sheet_id = bmat_fields[0]
+        entries = bmat_fields[-1]
+        molecule_name = bmat_fields[7]
+        organism_common_name = bmat_fields[8]
+        organism_scientific_name = bmat_fields[9]
         mat = numpy.array(map(lambda row : list(row), entries.split(",")))
 
-        if len(mat.shape) != 2:
-            print
-            print line
-
-        shelf[doc_id] = line
+        shelf[sheet_id] = line
 
         record = { "trimers" : defaultdict(set),
                    "trimers-list" : [],
@@ -97,19 +106,19 @@ if __name__ == "__main__":
             update_disk_record(record, trimer)
 
         try:
-            writer.add_document(sheet_id=u"%s" % doc_id,
+            writer.add_document(sheet_id=u"%s" % sheet_id,
+                                molecule_name=u"%s" % molecule_name,
+                                organism_common_name=u"%s" % organism_common_name,
+                                organism_scientific_name=u"%s" % organism_scientific_name,
                                 trimers=u"%s" % " ".join(t.id_str for t in
                                                          record["trimers-list"]))
 
-            f = open(os.path.join(trimers_dir, "%s.record" % doc_id), 'w')
+            f = open(os.path.join(trimers_dir, "%s.record" % sheet_id), 'w')
             cPickle.dump(record, f)
             f.close()
 
-            if options.verbose:
-                print doc_id, "index OK"
-        except:
-            if options.verbose:
-                print doc_id, "index FAIL"
+        except Exception, e:
+            sys.stderr.write("ERROR: %s\n" % e)
 
     shelf.close()
     writer.commit()
