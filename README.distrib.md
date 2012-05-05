@@ -1,37 +1,12 @@
 # README
 
 This .tar.gz file contains the source code for the Python implementation of
-BetaSearch. This version of BetaSearch can be used to build and query your own
-beta-sheet indices.
+BetaSearch, which can be used to build and query your own beta-sheet indices.
 
 ## Help
 
 Feel free to contact me: `Kian Ho <hohkhkh1@csse.unimelb.edu.au>` should you
 have problems running this code or have any questions about our work.
-
-## File Descriptions
-
-* `build-index.py` reads beta-matrices from stdin (preferably directly from a
-.bmat file) and generates the appropriate betasearch indices within a specified
-directory. This directory is then used as an index to the betasearch query
-script `betasearch-local.py` (_see below_).
-
-* `betasearch-local.py` is the main betasearch script which reads in queries
-  (line-by-line from stdin) of the form: `<query id>:XXX,XXX,XXX` where each
-`X` is an amino acid. TODO
-
-* `_betasearch.py` is a Python module that implements the indexing, querying,
-  and verification algorithms used by BetaSearch.
-
-* `betapy/betapy.py` is a Python module containing various PDB and protein
-  structure-related classes and functions that are used by BetaSearch.
-
-* `betapy/gen_bmats.py` generates beta-matrices from pdb file paths.
-
-* `betapy/ptgraph2` contains scripts of a Python module originally developed by
-  `Alex Stivala <astivala@csse.unimelb.edu.au>` for `Pro-Origami`.
-  BetaSearch makes extensive use of this module.
-
 
 ## Instructions
 

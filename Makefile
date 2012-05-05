@@ -37,7 +37,9 @@ ASTRAL95_FAKE_PDB_PATH=/vlsci/VR0127/kian/bio/PDB/fake-ASTRAL95-pdbstyle-1.75A
 ASTRAL95_BMATS=./datasets/astral95.bmats
 ASTRAL95_BMATS_TOPOS=$(ASTRAL95_BMATS).topos
 ASTRAL95_BMATS_NATPAIRS=$(ASTRAL95_BMATS).natpairs
+ASTRAL95_BMATS_INDEX=./indices/astral95_bmats_index
 ASTRAL95_BMATS_JOBNAME=astral95_bmats
+ASTRAL95_BMATS_INDEX_JOBNAME=a95_bmats_index
 
 #
 # PDB2012
@@ -69,14 +71,20 @@ build_astral95_bmats:
 	find $(ASTRAL95_FAKE_PDB_PATH) -name "*.ent.gz" | $(GEN_BMATS_SCRIPT) -b $(ASTRAL95_BMATS) \
 		-p $(ASTRAL95_FAKE_PDB_PATH) -n $(ASTRAL95_BMATS_NATPAIRS) -t $(ASTRAL95_BMATS_TOPOS) 2> /dev/null
 
+# Build the ASTRAL95 betasearch index.
+build_astral95_bmats_index:
+	./build-index.py -i $(ASTRAL95_BMATS_INDEX) -l 4096 < $(ASTRAL95_BMATS)
+
 # Build the PDB2012 .bmats file.
 build_pdb2012_bmats:
 	find $(PDB2012_PDB_PATH) -name "*.ent.gz" | $(GEN_BMATS_SCRIPT) -b $(PDB2012_BMATS) \
 		-p $(PDB2012_PDB_PATH) -n $(PDB2012_BMATS_NATPAIRS) -t $(PDB2012_BMATS_TOPOS) 2> /dev/null
 
-pbs_astral95_bmats:
-	runpbs -j $(ASTRAL95_BMATS_JOBNAME) --walltime 120:0:0 --pvmem 8gb -c "make build_astral95_bmats"
 
+pbs_astral95_bmats:
+	runpbs -j $(ASTRAL95_BMATS_JOBNAME) --walltime 6:0:0 --pvmem 8gb -c "make build_astral95_bmats"
+pbs_astral95_bmats_index:
+	runpbs -j $(ASTRAL95_BMATS_INDEX_JOBNAME) --walltime 2:0:0 --pvmem 8gb -c "make build_astral95_bmats_index"
 pbs_pdb2012_bmats:
 	runpbs -j $(PDB2012_BMATS_JOBNAME) --walltime 240:0:0 --pvmem 8gb -c "make build_pdb2012_bmats"
 
