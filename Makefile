@@ -23,10 +23,10 @@ DISTRIB_TAR_GZ_FILE=./betasearch-python.tar.gz
 # TEST VARIABLES
 #
 GEN_BMATS_SCRIPT=../betapy/gen_bmats.py
+#TEST_PDB_ID=1k4r
 TEST_PDB_ID=1ubq
 TEST_INDEX=./test-index
 TEST_QUERY=$(TEST_PDB_ID).bmats
-#TEST_PDB_ID=1k4r
 PDB_PATH=~/PDB
 
 nothing:
@@ -37,7 +37,7 @@ test_build_index:
 	echo $(TEST_PDB_ID) | $(GEN_BMATS_SCRIPT) -b ./$(TEST_PDB_ID).bmats \
 		-p ~/PDB -n ./$(TEST_PDB_ID).natpairs -t ./$(TEST_PDB_ID).topos
 	./build-index.py -i $(TEST_INDEX) < $(TEST_PDB_ID).bmats 
-	./betasearch-local.py -i $(TEST_INDEX) --stdin < ./$(TEST_QUERY)
+	./betasearch-local.py -i $(TEST_INDEX) -H --stdin < ./$(TEST_QUERY)
 
 distrib: .distrib
 

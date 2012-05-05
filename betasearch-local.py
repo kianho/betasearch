@@ -17,6 +17,7 @@ import networkx as nx
 import argparse
 import pprint
 import numpy as np
+import shelve
 
 from sys import stderr
 from collections import defaultdict
@@ -130,6 +131,7 @@ def parse_options():
     parser.add_argument("-q", "--queries")
     parser.add_argument("-s", "--singlequery")
     parser.add_argument("-i", "--indexdir")
+    parser.add_argument("-H", "--humanreadable", action="store_true", default=False)
     parser.add_argument("--validate", default=False, action="store_true")
     parser.add_argument("--stdin", default=False, action="store_true",
             help="Read queries from stdin.")
@@ -167,8 +169,21 @@ def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=
             return 0
 
     try:
+        if options.humanreadable:
+            lines_db = os.path.join(options.indexdir, "lines.db")
+            shelf = shelve.open(lines_db)
+
         for sheet_id, mol_name, common_name, sci_name in do_query(bmtext, index_dir):
             print sheet_id, mol_name, common_name, sci_name
+
+            if options.humanreadable:
+                raw_bmat_line = shelf[sheet_id]
+                print os.linesep.join(raw_bmat_line.split("^")[-1].split(","))
+                print
+
+        if options.humanreadable:
+            shelf.close()
+        
     except:
         if not QUIET:
             print "%s\tEXIT_FAILURE" % query_id
