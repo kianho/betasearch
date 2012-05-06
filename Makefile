@@ -7,7 +7,6 @@
 #
 #
 
-PY_SRC=./build-index.py ./_betasearch.py ./betasearch-local.py ./betamatrix.py
 QUERIES=./experiments/data/queries
 BMATS=./experiments/data/astral95.bmats
 BETASEARCH_QUERIES=./experiments/data/betasearch/astral95_bmats_queries.txt
@@ -16,6 +15,7 @@ BETAPY_DIR=../betapy
 BETAPY_DISTRIB_TAR=$(BETAPY_DIR)/betapy-distrib.tar
 DISTRIB_README=./README.distrib.md
 BETAPY_DIR=../betapy
+README=README.html
 
 #
 # TEST VARIABLES
@@ -88,17 +88,22 @@ pbs_astral95_bmats_index:
 pbs_pdb2012_bmats:
 	runpbs -j $(PDB2012_BMATS_JOBNAME) --walltime 240:0:0 --pvmem 8gb -c "make build_pdb2012_bmats"
 
-distrib: .distrib
-
-.distrib: $(PY_SRC) $(DISTRIB_README)
+distrib:
 	cp $(DISTRIB_README) ./README.md
-	tar --exclude="*.tar" --exclude="*.tar.gz" --exclude="*.pyc" --exclude="*.pyo" \
-	   	--exclude="experiments" --exclude="README.experiments.md" --exclude=".hg*" \
-		--exclude="manuscript" --exclude="*.DS_Store" --exclude="bsmodule.py" \
+	tar --exclude="*.tar" \
+	   	--exclude="*.tar.gz" \
+	   	--exclude="*.pyc" \
+		--exclude="*.pyo" \
+	   	--exclude="experiments" \
+		--exclude="indices" \
+		--exclude="datasets" \
+	   	--exclude="README.experiments.md" \
+	   	--exclude=".hg*" \
+		--exclude="manuscript" \
+	   	--exclude="*.DS_Store" \
+	   	--exclude="bsmodule.py" \
 	   	-h -cvf $(DISTRIB_TAR) ../betasearch-py-local
 	gzip -f -c $(DISTRIB_TAR) > $(DISTRIB_TAR).gz
-
-	rm -f ./README.md
 
 readme:
 	Markdown.pl ./README.distrib.md > ./README.html
@@ -108,3 +113,7 @@ clean:
 	rm -f ./*.{bmats,natpairs,topos}
 	rm -rf $(TEST_INDEX)
 	rm -f $(ASTRAL95_BMATS_JOBNAME).{e,o}*
+	rm -f $(PDB2012_BMATS_JOBNAME).{e,o}*
+	rm -f $(ASTRAL95_BMATS_INDEX_JOBNAME).{e,o}*
+	rm -f runpbs.{e,o}*
+	rm -f $(README)
