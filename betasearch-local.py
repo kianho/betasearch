@@ -17,6 +17,7 @@ import networkx as nx
 import argparse
 import pprint
 import numpy as np
+import shelve
 
 from sys import stderr
 from collections import defaultdict
@@ -27,6 +28,7 @@ from whoosh.qparser import QueryParser
 from whoosh.query import *
 
 DEFAULT_INDEX = os.path.expanduser("~/workspaces/betasearch-py-local/experiments/data/betasearch/astral95_bmats_db/")
+SEPCHAR = "^"
 
 
 def get_pdb_id(sheet_id):
@@ -90,23 +92,15 @@ def validate_query(bmtext):
     if not graph_is_connected(g):
         return False, "Error: all the trimers in the query need to overlap."
 
-    return True, ":" + bm_line
+    global SEPCHAR
+
+    return True, SEPCHAR + bm_line
 
 
 def run_query(line, index_dir=DEFAULT_INDEX):
     req_paths = { "whoosh-dir" : os.path.join(index_dir, "whoosh"), 
                   "trimers-dir" : os.path.join(index_dir, "trimers") }
 
-#   line = line.upper()
-
-#   identical_sheets = defaultdict(list)
-#   num_sheets = 0
-#   pdb_ids = set()
-
-#   expansions = bs.enforced_wc_expansions_iter(line)
-
-#   for exp_line in expansions:
-#       q = bs.Query(exp_line)
     q = bs.Query(line)
 
     index_ = open_dir(req_paths["whoosh-dir"])
@@ -117,11 +111,7 @@ def run_query(line, index_dir=DEFAULT_INDEX):
     query_ = parser_.parse(q.get_whoosh_query_str())
     results_ = searcher_.search(query_, limit=None)
 
-#       for sheet_id, cpu_time in q.verify(results_, req_paths["trimers-dir"]):
-    for sheet_id in q.verify(results_, req_paths["trimers-dir"]):
-        yield sheet_id
-
-    return 
+    return q.verify(results_, req_paths["trimers-dir"])
 
 
 def do_query(query_str, index_dir=DEFAULT_INDEX):
@@ -144,6 +134,7 @@ def parse_options():
     parser.add_argument("-q", "--queries")
     parser.add_argument("-s", "--singlequery")
     parser.add_argument("-i", "--indexdir")
+    parser.add_argument("-H", "--humanreadable", action="store_true", default=False)
     parser.add_argument("--validate", default=False, action="store_true")
     parser.add_argument("--stdin", default=False, action="store_true",
             help="Read queries from stdin.")
@@ -157,20 +148,20 @@ def parse_options():
     return options
 
 
-def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=False):
+def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=False, NHITS_ONLY=False):
     """Run a single query defined on a single line.
 
     Arguments:
-        line -- the query specified in the form:
-                    "sheet-2332-A-000:H-M,GPN"
+        line -- 
 
     Returns:
         the number of hits (sheets matching the query).
 
     """
 
-    query_id, bmtext = line.strip().split(":")
-    sheet_ids = []
+    vals = line.strip().split( SEPCHAR )
+    query_id = vals[0]
+    bmtext = vals[-1]
 
     if VALIDATE_QUERY:
         is_valid, err_txt = validate_query(bmtext)
@@ -180,25 +171,33 @@ def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=
             sys.stderr.write("ERRLOG: %s\n" % err_txt) 
             return 0
 
-    if DEBUG:
-        for sheet_id in do_query(bmtext, index_dir):
-            sheet_ids.append(sheet_id)
-    else:
-        try:
-            for sheet_id in do_query(bmtext, index_dir):
-                sheet_ids.append(sheet_id)
-        except:
-            if not QUIET:
-                print "%s\tEXIT_FAILURE" % query_id
-            return 0 
+    try:
+        if NHITS_ONLY:
+            return len(list(do_query(bmtext, index_dir)))
+        else:
+            if options.humanreadable:
+                lines_db = os.path.join(options.indexdir, "lines.db")
+                shelf = shelve.open(lines_db)
 
+            for sheet_id, mol_name, common_name, sci_name in do_query(bmtext, index_dir):
+                print sheet_id, mol_name, common_name, sci_name
+
+                if options.humanreadable:
+                    raw_bmat_line = shelf[sheet_id]
+                    print os.linesep.join(raw_bmat_line.split( SEPCHAR )[-1].split(","))
+                    print
+
+        if options.humanreadable:
+            shelf.close()
+        
+    except Exception, e:
+        sys.stderr.write(str(e))
+        sys.stderr.write("\n")
         if not QUIET:
-            print "%s\t%s" % \
-                    (query_id, "\t".join("%s:1.0000" % s for s in sheet_ids))
+            print "%s\tEXIT_FAILURE" % query_id
+        return 0 
 
-        nhits = len(sheet_ids)
-
-    return nhits
+    return 0
 
 
 if __name__ == "__main__":
@@ -210,7 +209,7 @@ if __name__ == "__main__":
         #
         for line in sys.stdin:
             line = line.strip()
-            run(line, options.indexdir, options.validate, options.DEBUG)
+            run(line, index_dir=options.indexdir)
 
     elif options.singlequery:
         # Run a single query from the --singlequery command line option
