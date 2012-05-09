@@ -129,7 +129,17 @@ pbs_pdb2012_bmats:
 pbs_pdb2011_bmats:
 	runpbs -j $(PDB2011_BMATS_JOBNAME) --walltime 240:0:0 --pvmem 8gb -c "make build_pdb2011_bmats"
 
-distrib:
+distrib: ./betasearch-src.tar.gz datasets_distrib
+	if [[ ! -d ./distrib-files ]] ; \
+	then \
+		mkdir ./distrib-files ; \
+	fi
+	mv ./*.gz ./distrib-files
+
+
+datasets_distrib: ./pdb2012.bmats.gz ./pdb2011.bmats.gz
+
+./betasearch-src.tar.gz:
 	cp $(DISTRIB_README) ./README.md
 	tar --exclude="*.tar" \
 	   	--exclude="*.tar.gz" \
@@ -143,14 +153,25 @@ distrib:
 		--exclude="manuscript" \
 	   	--exclude="*.DS_Store" \
 	   	--exclude="bsmodule.py" \
+		--exclude="www_public" \
 	   	-h -cvf $(DISTRIB_TAR) ../betasearch-py-local
-	gzip -f -c $(DISTRIB_TAR) > $(DISTRIB_TAR).gz
+	gzip -f -c $(DISTRIB_TAR) > $@ 
+	rm -f ./README.md
+
+./pdb2012.bmats.gz:
+	gzip -c ./datasets/`basename $@ .gz` > $@
+./pdb2011.bmats.gz:
+	gzip -c ./datasets/`basename $@ .gz` > $@
+./astral95.bmats.gz:
+	gzip -c ./datasets/`basename $@ .gz` > $@
+
 
 readme:
 	Markdown.pl ./README.distrib.md > ./README.html
 
 clean:
 	rm -f $(DISTRIB_TAR) $(DISTRIB_TAR).gz
+	rm -f ./*.gz
 	rm -f ./*.{bmats,natpairs,topos}
 	rm -rf $(TEST_INDEX)
 	rm -f $(ASTRAL95_BMATS_JOBNAME).{e,o}*
@@ -158,3 +179,4 @@ clean:
 	rm -f $(ASTRAL95_BMATS_INDEX_JOBNAME).{e,o}*
 	rm -f runpbs.{e,o}*
 	rm -f $(README)
+	rm -rf ./distrib-files
