@@ -1,31 +1,62 @@
 # README
 
 This .tar.gz file contains the source code for the Python implementation of
-BetaSearch, which can be used to build and query your own beta-sheet indices.
+BetaSearch, which can be used to build and query your own beta-sheet indices.  
 
 ## Help
 
-Feel free to contact me: `Kian Ho <hohkhkh1@csse.unimelb.edu.au>` should you
-have problems running this code or have any questions about our work.
+Feel free to email me
+([`hohkhkh1@csse.unimelb.edu.au`](mailto:hohkhkh1@csse.unimelb.edu.au)) should
+you have problems running this code or if you have any questions about our work.
+
+## Web server
+
+Alternatively, you can use BetaSearch via our web-server
+([here](http://betasearch.servehttp.com/query)).
 
 ## Instructions
 
+### Dependencies
+
+* **Operating System**:
+
+    * Linux/Unix (BetaSearch was developed and tested on Ubuntu 11.10 and
+      12.04)  
+
+* **Software**:
+
+    * [Python 2.7.x](http://python.org/download/releases/2.7.3/)
+
+                $ sudo apt-get install python2.7
+
+    * [python-networkx](http://networkx.lanl.gov/)
+
+                $ sudo apt-get install python-networkx
+
+    * [python-whoosh](https://bitbucket.org/mchaput/whoosh/wiki/Home)
+
+                $ sudo apt-get install python-whoosh
+
+    * [python-numpy](http://numpy.scipy.org/)
+
+                $ sudo apt-get install python-numpy
+
+
 ### Installation
 
-Unpack the `.tar.gz` file:
+1. Unpack the `.tar.gz` file:
 
         $ tar -zxf betasearch-python.tar.gz
 
-which will place the top directory (`betasearch-py-local`) into the `pwd`, `cd`
-into this directory in order to perform the remaining tasks in this section:
+   which extract the top directory (`betasearch-py-local`) into the current directory.
+   
+2. Change into this directory in order to perform the remaining tasks in this
+   section:
 
         $ cd ./betasearch-py-local
 
 
 ### Building a BetaSearch index
-
-**NOTE**: Building a BetaSearch index from an entire PDB repository (e.g. ~75K
-PDB structures) will take several hours to complete.
 
 A `.bmats` file needs to be created before the BetaSearch index can be built.
 The `.bmats` file is created from a list of absolute paths to pdb files in the
@@ -38,6 +69,24 @@ beta-matrices are written to `example.bmats`, one beta-matrix per line:
                                   -t ./example.topos \
                                   -n ./example.natpairs \
                                   -p /path/to/PDB > example.bmats
+
+**NOTE**: Building a BetaSearch index from an entire PDB repository (e.g. ~75K
+PDB structures) will take a couple of hours to complete. We have therefore made
+available the following precomputed `.bmats` files for download:
+
+* [`pdb2011.bmats.gz`](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch/files/pdb2011.bmats.gz)
+
+    - generated from the January 3, 2011 snapshot of the PDB.
+
+* [`pdb2012.bmats.gz`](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch/files/pdb2012.bmats.gz)
+
+    - generated from the February 15, 2012 snapshot of the PDB.
+
+* [`astral95.bmats.gz`](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch/files/astral95.bmats.gz)
+
+    - generated from the [ASTRAL SCOP 95% sequence ID filtered
+      subset](http://scop.berkeley.edu/downloads/pdbstyle/pdbstyle-sel-gs-bib-95-1.75A.tgz).
+
 
 Use the `build-index.py` script to read a `.bmats` file from stdin, this will
 generate the BetaSearch index using the Whoosh Python module as well as a few
