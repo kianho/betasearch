@@ -28,6 +28,7 @@ from whoosh.qparser import QueryParser
 from whoosh.query import *
 
 DEFAULT_INDEX = os.path.expanduser("~/workspaces/betasearch-py-local/experiments/data/betasearch/astral95_bmats_db/")
+SEPCHAR = "^"
 
 
 def get_pdb_id(sheet_id):
@@ -91,7 +92,9 @@ def validate_query(bmtext):
     if not graph_is_connected(g):
         return False, "Error: all the trimers in the query need to overlap."
 
-    return True, ":" + bm_line
+    global SEPCHAR
+
+    return True, SEPCHAR + bm_line
 
 
 def run_query(line, index_dir=DEFAULT_INDEX):
@@ -145,7 +148,7 @@ def parse_options():
     return options
 
 
-def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=False):
+def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=False, NHITS_ONLY=False):
     """Run a single query defined on a single line.
 
     Arguments:
@@ -156,7 +159,7 @@ def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=
 
     """
 
-    vals = line.strip().split("^")
+    vals = line.strip().split( SEPCHAR )
     query_id = vals[0]
     bmtext = vals[-1]
 
@@ -169,27 +172,32 @@ def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=
             return 0
 
     try:
-        if options.humanreadable:
-            lines_db = os.path.join(options.indexdir, "lines.db")
-            shelf = shelve.open(lines_db)
-
-        for sheet_id, mol_name, common_name, sci_name in do_query(bmtext, index_dir):
-            print sheet_id, mol_name, common_name, sci_name
-
+        if NHITS_ONLY:
+            return len(list(do_query(bmtext, index_dir)))
+        else:
             if options.humanreadable:
-                raw_bmat_line = shelf[sheet_id]
-                print os.linesep.join(raw_bmat_line.split("^")[-1].split(","))
-                print
+                lines_db = os.path.join(options.indexdir, "lines.db")
+                shelf = shelve.open(lines_db)
+
+            for sheet_id, mol_name, common_name, sci_name in do_query(bmtext, index_dir):
+                print sheet_id, mol_name, common_name, sci_name
+
+                if options.humanreadable:
+                    raw_bmat_line = shelf[sheet_id]
+                    print os.linesep.join(raw_bmat_line.split( SEPCHAR )[-1].split(","))
+                    print
 
         if options.humanreadable:
             shelf.close()
         
-    except:
+    except Exception, e:
+        sys.stderr.write(str(e))
+        sys.stderr.write("\n")
         if not QUIET:
             print "%s\tEXIT_FAILURE" % query_id
         return 0 
 
-    return
+    return 0
 
 
 if __name__ == "__main__":
