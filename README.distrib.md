@@ -12,7 +12,7 @@ you have problems running this code or if you have any questions about our work.
 ## Web server
 
 Alternatively, you can use BetaSearch via our web-server
-([here](http://betasearch.servehttp.com/query)).
+([here](http://betasearch.servehttp.com)).
 
 ## Instructions
 
@@ -20,10 +20,14 @@ Alternatively, you can use BetaSearch via our web-server
 
 * **Operating System**:
 
-    * Linux/Unix (BetaSearch was developed and tested on Ubuntu 11.10 and
+    * Linux/Unix (BetaSearch was developed on Ubuntu 11.10 and
       12.04)  
 
 * **Software**:
+
+    **NOTE**: I have included the `check_dependencies.py` script to check if the
+    required Python modules have been installed into your `$PYTHONPATH`, it can
+    be run executed by calling `python ./check_dependencies.py` on the command line.
 
     * [Python 2.7.x](http://python.org/download/releases/2.7.3/)
 
@@ -70,23 +74,10 @@ beta-matrices are written to `example.bmats`, one beta-matrix per line:
                                   -n ./example.natpairs \
                                   -p /path/to/PDB > example.bmats
 
-**NOTE**: Building a BetaSearch index from an entire PDB repository (e.g. ~75K
-PDB structures) will take a couple of hours to complete. We have therefore made
-available the following precomputed `.bmats` files for download:
-
-* [`pdb2011.bmats.gz`](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch/files/pdb2011.bmats.gz)
-
-    - generated from the January 3, 2011 snapshot of the PDB.
-
-* [`pdb2012.bmats.gz`](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch/files/pdb2012.bmats.gz)
-
-    - generated from the February 15, 2012 snapshot of the PDB.
-
-* [`astral95.bmats.gz`](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch/files/astral95.bmats.gz)
-
-    - generated from the [ASTRAL SCOP 95% sequence ID filtered
-      subset](http://scop.berkeley.edu/downloads/pdbstyle/pdbstyle-sel-gs-bib-95-1.75A.tgz).
-
+**NOTE**: Building a single `.bmats` file from an entire PDB repository (e.g.
+~75K PDB structures) will take a few days to complete. We have therefore made
+available precomputed (gzipped) `.bmats` files for download from
+[here](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch).
 
 Use the `build-index.py` script to read a `.bmats` file from stdin, this will
 generate the BetaSearch index using the Whoosh Python module as well as a few
