@@ -136,6 +136,7 @@ distrib: ./betasearch-src.tar.gz datasets_distrib readme
 	fi
 	mv ./*.gz ./distrib-files
 	cp ./datasets/astral95_sheetids_to_domids.txt ./distrib-files/
+	cp ./README.html ./distrib-files/
 
 datasets_distrib: ./pdb2012.bmats.gz ./pdb2011.bmats.gz ./astral95.bmats.gz
 

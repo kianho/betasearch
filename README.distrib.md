@@ -1,12 +1,14 @@
 # README
 
-This .tar.gz file contains the source code for the Python implementation of
-BetaSearch, which can be used to build and query your own beta-sheet indices.  
+The
+[`betasearch-src.tar.gz`](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch/files/betasearch-src.tar.gz)
+file contains the source code for the Python implementation of BetaSearch,
+which can be used to build and query your own beta-sheet indices.  
 
 ## Help
 
 Feel free to email me
-([`hohkhkh1@csse.unimelb.edu.au`](mailto:hohkhkh1@csse.unimelb.edu.au)) should
+(`hohkhkh1 -at - csse -dot- unimelb -dot- edu -dot- au`) should
 you have problems running this code or if you have any questions about our work.
 
 ## Web server
@@ -27,7 +29,7 @@ Alternatively, you can use BetaSearch via our web-server
 
     **NOTE**: I have included the `check_dependencies.py` script to check if the
     required Python modules have been installed into your `$PYTHONPATH`, it can
-    be run executed by calling `python ./check_dependencies.py` on the command line.
+    be run by calling `python ./check_dependencies.py` on the command line.
 
     * [Python 2.7.x](http://python.org/download/releases/2.7.3/)
 
@@ -44,15 +46,19 @@ Alternatively, you can use BetaSearch via our web-server
     * [python-numpy](http://numpy.scipy.org/)
 
                 $ sudo apt-get install python-numpy
+    
+    * [python-biopython](http://www.biopython.org)
+
+                $ sudo apt-get install python-biopython
 
 
 ### Installation
 
 1. Unpack the `.tar.gz` file:
 
-        $ tar -zxf betasearch-python.tar.gz
+        $ tar -zxf betasearch-src.tar.gz
 
-   which extract the top directory (`betasearch-py-local`) into the current directory.
+   which extracts the top directory (`betasearch-py-local`) into the current directory.
    
 2. Change into this directory in order to perform the remaining tasks in this
    section:
