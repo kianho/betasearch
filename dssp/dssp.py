@@ -15,8 +15,6 @@ Description:
 import os
 import sys
 import Bio.PDB
-import ptgraph2
-import betapy
 import json
 import numpy
 
@@ -26,7 +24,6 @@ from collections import OrderedDict, defaultdict
 from Bio.PDB import PDBParser, DSSP, calc_dihedral
 from Bio.PDB.Vector import Vector
 from Bio.PDB.Polypeptide import three_to_one
-from betapy import Sheet
 
 
 class DSSPChain(object):
