@@ -1,7 +1,5 @@
 from setuptools import setup, find_packages
 
-print find_packages("betasearch")
-
 setup(name="betasearch",
     version="0.1",
     description="a python module for the fast indexing and querying of protein beta-sheet substructures.",
