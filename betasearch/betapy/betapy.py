@@ -38,11 +38,11 @@ except ImportError:
     sys.exit(1)
 
 
-from Bio.PDB import calc_dihedral
-from Bio.PDB.PDBParser import PDBParser, DSSP
-from Bio.PDB.Polypeptide three_to_one
+from Bio.PDB import calc_dihedral, DSSP
+from Bio.PDB.PDBParser import PDBParser
+from Bio.PDB.Polypeptide import three_to_one
 from Bio.PDB.Vector import Vector
-from Bio.SCOP.Raf import to_one_letter_code
+from Bio.SCOP.Raf import protein_letters_3to1
 
 from sys import stderr
 from subprocess import Popen, PIPE
@@ -132,7 +132,7 @@ def get_single_aa(self):
     try:
         return three_to_one(self.get_resname())
     except KeyError:
-        return to_one_letter_code.get(self.get_resname(), "X")
+        return protein_letters_3to1(self.get_resname(), "X")
 
 LAST_X1_POINT = defaultdict(
         lambda : "CG",
