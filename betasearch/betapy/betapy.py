@@ -10,7 +10,6 @@ Description:
 
 import os
 import sys
-import optparse
 import tempfile
 import cPickle
 import copy
@@ -18,7 +17,6 @@ import re
 import json
 import gzip
 import numpy
-import pprint
 
 
 DSSP_HB_THRESH = -0.5 # -0.5 kcal/mol
@@ -1880,8 +1878,6 @@ class SheetMatrix(AbstractMatrix):
         """Get a string representation of this class
 
         """
-
-        import pprint
 
         if self.is_barrel:
             barrel_str = 't'
