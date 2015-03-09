@@ -21,17 +21,22 @@ import numpy
 from itertools import imap
 from subprocess import Popen, PIPE
 from collections import OrderedDict, defaultdict
+
 from Bio.PDB import PDBParser, DSSP, calc_dihedral
 from Bio.PDB.Vector import Vector
 from Bio.PDB.Polypeptide import three_to_one
 
 
 class DSSPChain(object):
-    """
+    """A single protein chain parsed from DSSP output.
+
     """
 
     def __init__(self, raw_chain):
         """Constructor.
+
+        Args:
+            raw_chain:
 
         """
 
@@ -61,18 +66,23 @@ class DSSPChain(object):
                             (r.get_resname() for r in self.residues)))
 
     def get_ss_seq(self):
-        """Get the DSSP secondary structure sequence (Q8).
+        """Get the (8-state) DSSP secondary structure sequence.
 
         """
         return "".join(r.ss for r in self.residues)
 
 
 class DSSPProtein(object):
-    """
+    """A single protein parsed from DSSP output (consists of one or more
+    chains).
+
     """
 
     def __init__(self, pdb_fn):
         """Constructor.
+
+        Args:
+            pdb_fn: Path to a PDB file.
 
         """
 
@@ -87,65 +97,84 @@ class DSSPProtein(object):
         return self.chains[chain_id]
 
     def parse_dssp(self, pdb_fn, interchain_bps=False):
-        """
+        """Parse the output of DSSP when run on a single PDB file.
 
-        TODO: clean this function up.
+        Args:
+            pdb_fn: Path to a PDB file.
+            interchain_bps: True if considering bridge-pairings between chains (optional).
+
+        Returns:
+            None
 
         """
 
         struct = PDBParser().get_structure(pdb_fn, pdb_fn)
         model = struct[0]
         dssp = DSSP(model, pdb_fn)
+        
+        # Map each PDB resid to the corresponding DSSP residue information.
         pdb_resid_to_dssp_info = OrderedDict()
+
+        # Map each DSSP index to the corresponding DSSP residue information.
         dssp_index_to_dssp_info = OrderedDict()
 
-        f = Popen(("dsspcmbi %s" % pdb_fn).split(), stdout=PIPE).stdout
+        # Begin parsing the DSSP output.
+        #
+        # TODO:
+        # - refactor these DSSP-related code blocks to use BioPython's DSSP
+        #   parsing instead.
+        with Popen(("dsspcmbi %s" % pdb_fn).split(), stdout=PIPE).stdout as f:
 
-        for line in f:
-            if line.startswith("  #  RESIDUE"):
-                break
+            # Skip the column header line.
+            for line in f:
+                if line.strip().startswith("#  RESIDUE"):
+                    break
 
-        for line in f:
-            if line[13] == "!":
-                continue
+            for line in f:
+                # Skip chain breaks.
+                if line[13] == "!":
+                    continue
 
-            pdb_resseq = int(line[5:10])
-            pdb_icode = line[10]
-            pdb_resid = (pdb_resseq, pdb_icode)
-            dssp_index = int(line[:5])
-            bp1 = int(line[25:29])
-            bp2 = int(line[29:33])
+                pdb_resseq = int(line[5:10])
+                pdb_icode = line[10]
+                pdb_resid = (pdb_resseq, pdb_icode)
+                dssp_index = int(line[:5])
+                bp1 = int(line[25:29])
+                bp2 = int(line[29:33])
 
-            hb_don_1 = int(line[38:45])
-            hb_don_1_energy = float(line[46:50])
-            hb_don_1_dssp_index = dssp_index + hb_don_1 if hb_don_1 != 0 else None
+                hb_don_1 = int(line[38:45])
+                hb_don_1_energy = float(line[46:50])
+                hb_don_1_dssp_index = dssp_index + hb_don_1 if hb_don_1 != 0 else None
 
-            hb_acc_1 = int(line[50:56])
-            hb_acc_1_energy = float(line[57:61])
-            hb_acc_1_dssp_index = dssp_index + hb_acc_1 if hb_acc_1 != 0 else None
+                hb_acc_1 = int(line[50:56])
+                hb_acc_1_energy = float(line[57:61])
+                hb_acc_1_dssp_index = dssp_index + hb_acc_1 if hb_acc_1 != 0 else None
 
-            hb_don_2 = int(line[61:67])
-            hb_don_2_energy = float(line[68:72])
-            hb_don_2_dssp_index = dssp_index + hb_don_2 if hb_don_2 != 0 else None
+                hb_don_2 = int(line[61:67])
+                hb_don_2_energy = float(line[68:72])
+                hb_don_2_dssp_index = dssp_index + hb_don_2 if hb_don_2 != 0 else None
 
-            hb_acc_2 = int(line[72:78])
-            hb_acc_2_energy = float(line[57:61])
-            hb_acc_2_dssp_index = dssp_index + hb_acc_2 if hb_acc_2 != 0 else None
+                hb_acc_2 = int(line[72:78])
+                hb_acc_2_energy = float(line[57:61])
+                hb_acc_2_dssp_index = dssp_index + hb_acc_2 if hb_acc_2 != 0 else None
 
-            pdb_resid_to_dssp_info[pdb_resid] = \
-            dssp_index_to_dssp_info[dssp_index] = { "dssp_index" : dssp_index,
-                                                  "bp1" : bp1, "bp2" : bp2,
-                                                  "hb_don_1_dssp_index" : hb_don_1_dssp_index,
-                                                  "hb_don_1_energy" : hb_don_1_energy,
-                                                  "hb_acc_1_dssp_index" : hb_acc_1_dssp_index,
-                                                  "hb_acc_1_energy" : hb_acc_1_energy,
-                                                  "hb_don_2_dssp_index" : hb_don_2_dssp_index,
-                                                  "hb_don_2_energy" : hb_don_2_energy,
-                                                  "hb_acc_2_dssp_index" : hb_acc_2_dssp_index,
-                                                  "hb_acc_2_energy" : hb_acc_2_energy }
+                pdb_resid_to_dssp_info[pdb_resid] = \
+                dssp_index_to_dssp_info[dssp_index] = \
+                    { "dssp_index" : dssp_index,
+                      "bp1" : bp1, "bp2" : bp2,
+                      "hb_don_1_dssp_index" : hb_don_1_dssp_index,
+                      "hb_don_1_energy" : hb_don_1_energy,
+                      "hb_acc_1_dssp_index" : hb_acc_1_dssp_index,
+                      "hb_acc_1_energy" : hb_acc_1_energy,
+                      "hb_don_2_dssp_index" : hb_don_2_dssp_index,
+                      "hb_don_2_energy" : hb_don_2_energy,
+                      "hb_acc_2_dssp_index" : hb_acc_2_dssp_index,
+                      "hb_acc_2_energy" : hb_acc_2_energy }
 
+        # Map each DSSP index to its Bio.PDB.Residue object.                
         dssp_index_to_res = {}
 
+        # Update each Bio.PDB.Residue with its DSSP information.
         for val in dssp:
             res = val[0]
             ss = val[1]
@@ -206,6 +235,8 @@ class DSSPProtein(object):
             hb_acc_1_res = dssp_index_to_res.get(hb_acc_1_dssp_index, None)
             hb_acc_2_res = dssp_index_to_res.get(hb_acc_2_dssp_index, None)
 
+            # TODO:
+            # - Replace these lines with more elegant code.
             res.bp1 = bp1_res
             res.bp2 = bp2_res
 
@@ -235,3 +266,8 @@ class DSSPProtein(object):
         self.dssp = dssp
 
         return
+
+
+if __name__ == "__name__":
+    pass
+
