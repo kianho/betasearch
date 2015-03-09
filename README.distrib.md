@@ -1,20 +1,14 @@
-# README
-
-The
-[`betasearch-src.tar.gz`](http://www.csse.unimelb.edu.au/~hohkhkh1/betasearch/files/betasearch-src.tar.gz)
-file contains the source code for the Python implementation of BetaSearch,
-which can be used to build and query your own beta-sheet indices.  
+# BetaSearch
 
 ## Help
 
-Feel free to email me
-(`hohkhkh1 -at - csse -dot- unimelb -dot- edu -dot- au`) should
-you have problems running this code or if you have any questions about our work.
+Feel free to email me should you have problems running this code or if you have
+any questions about our research.
 
-## Web server
+### Web server
 
-Alternatively, you can use BetaSearch via our web-server
-([here](http://betasearch.servehttp.com)).
+Alternatively, you can use BetaSearch via our [web-server](http://porthos.cis.unimelb.edu.au:2081/).
+
 
 ## Instructions
 
@@ -64,7 +58,6 @@ Alternatively, you can use BetaSearch via our web-server
    section:
 
         $ cd ./betasearch-py-local
-
 
 ### Building a BetaSearch index
 
@@ -160,7 +153,3 @@ addition to the metadata above:
         .
         .
         .
-        
-
-
-`$Id$`
