@@ -60,7 +60,8 @@ import warnings # so we can suppress the annoying tempnam 'security' warning
 import sys,os
 import getopt
 import re
-import numpy.oldnumeric as Numeric
+
+import numpy as Numeric
 from Bio.PDB import *
 
 import ptsecstruct

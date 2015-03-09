@@ -14,7 +14,8 @@
 from sets import Set  # note not using builtin set, so we can use python 2.3
 
 import Bio.PDB
-import numpy.oldnumeric as Numeric
+
+import numpy as Numeric
 
 from ptnode import *
 from ptutils import biopdbresid_to_pdbresseq

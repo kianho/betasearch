@@ -26,7 +26,8 @@
 import sys
 import getopt
 import pickle
-import numpy.oldnumeric as Numeric
+
+import numpy as Numeric
 from pttableau import PTTableauPacked
 from ptutils import isNaN
 

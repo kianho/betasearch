@@ -57,7 +57,7 @@ from time import strftime,localtime
 import resource # for getrusage()
 from math import sqrt
 
-from numpy.oldnumeric import *
+from numpy import *
 from Bio.PDB import *
 
 from ptnode import *

@@ -25,8 +25,8 @@
 import sys
 from math import pi,atan2,acos
 
-from numpy.oldnumeric import array
-from numpy.oldnumeric.linear_algebra import singular_value_decomposition  # part of Numeric
+from numpy import array
+from numpy.linalg import svd
 from Bio.PDB import *
 
 from ptsecstruct import stride_chainid_to_pdb_chainid
@@ -1197,7 +1197,7 @@ class PTNodeHelix(PTNode):
             # TODO: handle exception LinAlgError and fit axis by other
             # method (as when fewer than 4 residues). Never actually seen
             # this exception occur here but it could.
-            (u, s, vt) = singular_value_decomposition(A)
+            (u, s, vt) = svd(A)
             # the direction cosine is the first row of vt, this is the basis
             # vector corresponding to first (largest) singular value,
             # i.e. the dimension in which variance is greatest, hence this
@@ -1915,7 +1915,7 @@ class PTNodeStrand(PTNode):
             # TODO: handle exception LinAlgError and fit axis by other
             # method (as when fewer than 3 residues). Never actually seen
             # this exception occur here but it could.
-            (u, s, vt) = singular_value_decomposition(A)
+            (u, s, vt) = svd(A)
             # the direction cosine is the first row of vt
             dircos = Vector(vt[0,:])
 

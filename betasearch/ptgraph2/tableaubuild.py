@@ -54,7 +54,8 @@ and BioPython 1.43 with Numeric 24.2
 import warnings # so we can suppress the annoying tempnam 'security' warning
 import sys,os
 import getopt
-import numpy.oldnumeric as Numeric
+
+import numpy as Numeric
 from Bio.PDB import *
 
 from ptnode import *

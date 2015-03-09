@@ -46,7 +46,8 @@ matter with Python 'duck typing' of which this is a use (abuse?).
 
 import os,sys
 from math import pi
-import numpy.oldnumeric as Numeric
+
+import numpy as Numeric
 from Bio.PDB import *
 
 from ptnode import *

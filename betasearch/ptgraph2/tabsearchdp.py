@@ -23,7 +23,8 @@ import pickle
 from time import strftime,localtime
 import resource # for getrusage()
 
-import numpy.oldnumeric as Numeric
+
+import numpy as Numeric
 
 from pttableau import PTTableauPacked
 from tableaubuild import get_tableaux
