@@ -107,27 +107,31 @@ if __name__ == "__main__":
     #
     # Read pdb file paths one line at a time from stdin.
     #
-    
     with open(options.output, "wb") as f:
         for line in sys.stdin:
             pdb_fn = line.strip()
             delete_pdb_fn = False
 
             if not os.path.isfile(pdb_fn):
-                sys.stderr.write("ERROR: %s was not found, skipping...%s"
-                        % (pdb_fn, os.linesep))
+                sys.stderr.write(
+                    "ERROR: %s was not found, skipping...%s" %
+                        (pdb_fn, os.linesep))
                 continue
-
-            if is_gzipped(pdb_fn):
-                pdb_fn = get_gzipped_fn(pdb_fn)
-                delete_pdb_fn = True
 
             # NOTE: this script assumes that pdb filenames assume the format
             # specified by PDB_BASENAME_RE.
             pdb_basename = os.path.basename(pdb_fn)
             pdb_basename_match = PDB_BASENAME_RE.match(pdb_basename)
 
-            assert(pdb_basename_match)
+            if not pdb_basename_match:
+                sys.stderr.write(
+                    "ERROR: %s is not a valid PDB file name, skipping...%s" %
+                        (pdb_fn, os.linesep))
+                continue
+
+            if is_gzipped(pdb_fn):
+                pdb_fn = get_gzipped_fn(pdb_fn)
+                delete_pdb_fn = True
 
             pdb_id = pdb_basename_match.group(2)
 
@@ -139,7 +143,6 @@ if __name__ == "__main__":
                 # "0000". Check for this and set it to the id implied by the file
                 # name of the pdb file.
                 mat.sheet_id = mat.sheet_id.replace("-0000-", "-" + pdb_id + "-")
-
                 bm_buf = mat.get_bmat_string(pdb_fn)
 
                 # Find the native strand pairs and orientations.
@@ -147,9 +150,7 @@ if __name__ == "__main__":
                 pairs = []
                 for (s1,s2), is_parallel in mat.orients.iteritems():
                     orient = "p" if is_parallel else "a"
-
                     pairs.append((s1, s2, orient))
-
                     strand_nums.add(s1)
                     strand_nums.add(s2)
 
