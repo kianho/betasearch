@@ -31,8 +31,8 @@ import betasearch.betapy as betapy
 from sys import stderr
 from docopt import docopt
 
-
 TMP_DIR = "/var/tmp"
+VERBOSE = False
 
 # Regex to match the basename of a valid PDB file.
 PDB_BASENAME_RE = \
@@ -43,16 +43,17 @@ def is_gzipped(fn):
     return fn.endswith(".gz")
 
 
-def get_gzipped_fn(fn):
-    if is_gzipped(fn):
-        return fn
+def get_gunzipped_fn(fn):
+    if not is_gzipped(fn):
+        return fn, False
 
-    gz_fn = os.path.join(TMPDIR, fn + ".gz")
+    gunzipped_fn = \
+        os.path.join(TMP_DIR, os.path.basename(os.path.splitext(fn)[0]))
 
     # TODO: yuck, must correct this.
-    os.system("gzip -f -c %s > %s" % (fn, gz_fn))
+    os.system("gunzip -f -c %s > %s" % (fn, gunzipped_fn))
 
-    return gz_fn
+    return gunzipped_fn, True
 
 
 def gen_beta_matrices(pdb_fn):
@@ -64,7 +65,8 @@ def gen_beta_matrices(pdb_fn):
     if tmp_fn and os.path.isfile(tmp_fn):
         os.remove(tmp_fn)
 
-    if protein == None:
+    # TODO: add diagnostic stderr message.
+    if not protein:
         return
 
     for mat in protein.iter_beta_matrices():
@@ -112,12 +114,7 @@ if __name__ == "__main__":
                 continue
 
             # Remember to delete the temporary gunzipped pdb file if used.
-            if is_gzipped(pdb_fn):
-                pdb_fn = get_gzipped_fn(pdb_fn)
-                delete_pdb_fn = True
-            else:
-                delete_pdb_fn = False
-
+            pdb_fn, delete_pdb_fn = get_gunzipped_fn(pdb_fn) 
             pdb_id = pdb_basename_match.group(2)
 
             if pdb_id.startswith("pdb"):
