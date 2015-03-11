@@ -36,8 +36,8 @@ where `PDB_PATHS.dat` contains a list of PDB file paths, for example:
 then the resulting beta-matrices will be written to `BMATS.dat`
 in the following single-line format:
 ```
-```
 
+```
 Generate a BetaSearch index from beta-matrices:
 ```
 python ./bin/make_index.py
