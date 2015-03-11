@@ -26,7 +26,7 @@ import re
 import tempfile
 import pprint
 import glob
-import betapy
+import betasearch.betapy as betapy
 
 from sys import stderr
 from docopt import docopt
