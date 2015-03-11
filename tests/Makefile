@@ -6,7 +6,7 @@ BIN:=../bin
 	$(BIN)/make_index.py -d $(@D) < $<
 
 ./test.bmats:
-	find ./pdb_files/ -name "*.pdb" | $(BIN)/make_bmats.py -o $@
+	find ./pdb_files/ | grep ".\(ent\|pdb\)\(.gz\)\?$$" | $(BIN)/make_bmats.py -o $@
 
 clean:
 	rm -rf ./test.bmats ./test-index
