@@ -1,15 +1,14 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 """
 
-$Id: gen_bmats.py,v 5ae03e735bb2 2012/07/01 05:53:21 hohkhkh1 $
-
 Description:
-    Generate the beta-matrices from a list of pdb structures read from stdin.
-    Each line in stdin must either be a pdb id or a file path to a pdb file.
-    The beta-matrices are then written to stdout in the following format:
+    Compute beta-matrices from pdb file paths specified from stdin, one-line-at
+    a time. Each beta-matrix is compacted into a single line CSV representation
+    for convenience of subsequent processing.
 
 Usage:
-    TODO
+    ...
+
      
 """
 
@@ -23,11 +22,11 @@ import glob
 
 from sys import stderr
 
-TMP_DIR = "/tmp"
+TMP_DIR = "/var/tmp"
 
 # Regex to match the basename of a valid PDB file.
 PDB_BASENAME_RE = \
-    re.compile(r"(pdb)?([0-9A-Za-z]{4})\.(ent|pdb)(\.gz)?")
+    re.compile(r"(pdb)?([0-9A-Za-z]{4})\.(ent|pdb)(\.gz$)?")
 
 
 def is_gzipped(fn):
@@ -39,6 +38,8 @@ def get_gzipped_fn(fn):
         return fn
 
     gz_fn = os.path.join(TMPDIR, fn + ".gz")
+
+    # TODO: this is a hack, must fix later.
     os.system("gzip -f -c %s > %s" % (fn, gz_fn))
 
     return gz_fn
@@ -88,7 +89,6 @@ def parse_options():
             help="file in which the beta-matrices will be written, one per line.")
     parser.add_argument("--stdout", default=False, action="store_true")
     parser.add_argument("-B", "--halfbarrels", default=False, action="store_true")
-    parser.add_argument("-T", "--tempdir", default="/tmp")
 
     if len(sys.argv) < 2:
         parser.print_help()
@@ -101,8 +101,6 @@ def parse_options():
 
 if __name__ == "__main__":
     options = parse_options()
-
-    TMP_DIR = options.tempdir
 
     #
     # Read pdb file paths one line at a time from stdin.
