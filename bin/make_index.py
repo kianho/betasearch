@@ -1,10 +1,23 @@
 #!/usr/bin/env python
 """
 
-$Id$
+Author:
+    Kian Ho <hui.kian.ho@gmail.com>
 
 Description:
-    This script constructs an index for use with betasearch.
+    Build a betasearch index from beta-matrices. The index is written to disk as
+    a directory using the Whoosh and shelve libraries. Beta-matrices are read
+    from stdin, one line at a time.
+
+Usage:
+    make_index.py -d INDEXDIR [-n NUM] [-l MB] [-v]
+
+Options:
+    -d, --index-dir INDEXDIR    The location of the index directory to be built.
+    -n, --nprocs NUM            The number of processes to use [default: 1].
+    -l, --limit-mb MB           The max. memory to use when building the index [default: 256].
+    -v, --verbose               Display verbose output to stderr e.g.
+                                diagnostic messages.
 
 """
 
@@ -17,49 +30,22 @@ import numpy
 import shelve
 import commands
 
+from docopt import docopt
 from collections import defaultdict
 from whoosh.fields import Schema, TEXT, STORED
 from whoosh.index import create_in
 from _betasearch import trimers_gen, update_disk_record
 
 
-def parse_options():
-    """Parse the command-line options.
-
-    Returns:
-       optparse.OptionParser object with the command-line parameter
-       values. 
-
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--index_dir", required=True,
-                        help="directory in which to store the indices.")
-    parser.add_argument("-p", "--procs", default=1, type=int,
-                        help="no. of processors to use (default=1).")
-    parser.add_argument("-l", "--limitmb", default=128, type=int,
-                        help="amount of RAM to use (default=128).")
-    parser.add_argument("-v", "--verbose", default=False, action="store_true")
-    options = parser.parse_args()
-
-    if len(sys.argv) < 2:
-        parser.print_help()
-        sys.exit(-1)
-    
-    return options
-
-
-
 if __name__ == "__main__":
-    options = parse_options()
+    opts = docopt(__doc__)
 
-    if not os.path.exists(options.index_dir):
-        os.mkdir(options.index_dir)
+    if not os.path.exists(opts["--index-dir"]):
+        os.mkdir(opts["--index-dir"])
 
-    whoosh_dir = os.path.join(options.index_dir, "whoosh")
-    trimers_dir = os.path.join(options.index_dir, "trimers")
-    lines_db = os.path.join(options.index_dir, "lines.db")
+    whoosh_dir = os.path.join(opts["--index-dir"], "whoosh")
+    trimers_dir = os.path.join(opts["--index-dir"], "trimers")
+    lines_db = os.path.join(opts["--index-dir"], "lines.db")
 
     if not os.path.isdir(whoosh_dir):
         os.mkdir(whoosh_dir)
@@ -67,20 +53,22 @@ if __name__ == "__main__":
     if not os.path.isdir(trimers_dir):
         os.mkdir(trimers_dir)
 
+    # Instantiate blank Whoosh index objects.
     schema = Schema(sheet_id=STORED,
             molecule_name=STORED,
             organism_common_name=STORED,
             organism_scientific_name=STORED,
             trimers=TEXT(phrase=False))
     index_ = create_in(whoosh_dir, schema)
-    writer = index_.writer(procs=options.procs, limitmb=options.limitmb)
+    writer = index_.writer(procs=int(opts["--nprocs"]),
+                limitmb=float(opts["--limit-mb"]))
 
     start_time = time.time()
 
     shelf = shelve.open(lines_db)
 
+    # TODO: add formal description of beta-matrix format...
     # Read and index each beta-matrix from stdin.
-    # TODO: description of beta-matrix format...
     for line in sys.stdin:
         line = line.strip()
         bmat_fields = line.split("^")
@@ -112,21 +100,27 @@ if __name__ == "__main__":
                                 organism_scientific_name=u"%s" % organism_scientific_name,
                                 trimers=u"%s" % " ".join(t.id_str for t in
                                                          record["trimers-list"]))
-
-            f = open(os.path.join(trimers_dir, "%s.record" % sheet_id), 'w')
-            cPickle.dump(record, f)
-            f.close()
+            # TODO:
+            #   - needs a more scalable solution due to possible filesystem
+            #   limits of number of files in a directory, use no-SQL solution
+            #   perhaps?
+            record_fn = os.path.join(trimers_dir, "%s.record" % sheet_id)
+            with open(record_fn, 'w') as f_rec:
+                cPickle.dump(record, f_rec)
 
         except Exception, e:
-            sys.stderr.write("ERROR: %s\n" % e)
+            sys.stderr.write("ERROR: %s%s" % (e, os.linesep))
 
-    shelf.close()
     writer.commit()
+    shelf.close()
 
     finish_time = time.time()
 
-    if options.verbose:
-        print
-        print "elapsed time:", datetime.timedelta(seconds=finish_time - start_time)
-        print "approx. index size:", \
-                commands.getoutput("du -hs %s" % options.index_dir).split()[0]
+    if opts["--verbose"]:
+        elapsed_delta = datetime.timedelta(seconds=finish_time - start_time)
+
+        # TODO: use os stat module instead
+        approx_size = commands.getoutput("du -hs %s" % opts["--index-dir"]).split()[0]
+
+        sys.stderr.write("elapsed time: %r%s" % (elapsed_delta, os.linesep))
+        sys.stderr.write("approx. index size: %s%s" % (approx_size, os.linesep))

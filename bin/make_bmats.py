@@ -1,14 +1,22 @@
 #!/usr/bin/env python
 """
 
+Author:
+    Kian Ho <hui.kian.ho@gmail.com>
+
 Description:
     Compute beta-matrices from pdb file paths specified from stdin, one-line-at
     a time. Each beta-matrix is compacted into a single line CSV representation
     for convenience of subsequent processing.
 
 Usage:
-    ...
+    make_bmats.py -o FILE [-i FILE]
 
+Options:
+    -h, --help              Show this screen.
+    -o, --output FILE       Write the beta-matrices to FILE. 
+    -i, --input FILE        Read pdb file paths from FILE, otherwise read file
+                            paths from stdin.
      
 """
 
@@ -16,11 +24,13 @@ import os
 import sys
 import re
 import tempfile
-import betapy
 import pprint
 import glob
+import betapy
 
 from sys import stderr
+from docopt import docopt
+
 
 TMP_DIR = "/var/tmp"
 
@@ -39,7 +49,7 @@ def get_gzipped_fn(fn):
 
     gz_fn = os.path.join(TMPDIR, fn + ".gz")
 
-    # TODO: this is a hack, must fix later.
+    # TODO: yuck, must correct this.
     os.system("gzip -f -c %s > %s" % (fn, gz_fn))
 
     return gz_fn
@@ -69,46 +79,20 @@ def gen_beta_matrices(pdb_fn):
     return
 
 
-def parse_options():
-    """Parse the command-line options.
-
-    Returns:
-       optparse.OptionParser object with the command-line parameter
-       values. 
-
-    """
-
-    import argparse
-
-    usage_str = \
-        "python ./gen_bmats.py -o <output file> < <file containing pdb ids or pdb fns>"    
-
-    parser = argparse.ArgumentParser(usage=usage_str)
-
-    parser.add_argument("-o", "--output", 
-            help="file in which the beta-matrices will be written, one per line.")
-    parser.add_argument("--stdout", default=False, action="store_true")
-    parser.add_argument("-B", "--halfbarrels", default=False, action="store_true")
-
-    if len(sys.argv) < 2:
-        parser.print_help()
-        sys.exit(0)
-
-    options = parser.parse_args()
-
-    return options
-
-
 if __name__ == "__main__":
-    options = parse_options()
+    opts = docopt(__doc__)
 
     #
     # Read pdb file paths one line at a time from stdin.
     #
-    with open(options.output, "wb") as f:
-        for line in sys.stdin:
-            pdb_fn = line.strip()
-            delete_pdb_fn = False
+    with open(opts["--output"], "wb") as fout:
+        if opts["--input"]:
+            fin = open(opts["--input"], "rb")
+        else:
+            fin = sys.stdin
+        
+        for line in fin:
+            pdb_fn = os.path.abspath(os.path.expanduser(line.strip()))
 
             if not os.path.isfile(pdb_fn):
                 sys.stderr.write(
@@ -127,9 +111,12 @@ if __name__ == "__main__":
                         (pdb_fn, os.linesep))
                 continue
 
+            # Remember to delete the temporary gunzipped pdb file if used.
             if is_gzipped(pdb_fn):
                 pdb_fn = get_gzipped_fn(pdb_fn)
                 delete_pdb_fn = True
+            else:
+                delete_pdb_fn = False
 
             pdb_id = pdb_basename_match.group(2)
 
@@ -169,7 +156,9 @@ if __name__ == "__main__":
                     contig_s2 = contig_strand_nums[ s2 ]
                     buf.append("%d:%d:%s" % (contig_s1, contig_s2, orient))
 
-                f.write(bm_buf + os.linesep)
+                fout.write(bm_buf + os.linesep)
 
             if delete_pdb_fn:
                 os.remove(pdb_fn)
+
+        fin.close()
