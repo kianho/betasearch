@@ -8,7 +8,7 @@ Description:
     ...
 
 Usage:
-    betasearch-local.py -d DIR [-q FILE] [options]
+    run_queries.py -d DIR [-q FILE] [options]
 
 Options:
     -q, --queries FILE              Read one-or-more queries from FILE.
@@ -24,17 +24,9 @@ Options:
 import os
 import sys
 import shelve
-import _betasearch as bs
-import networkx as nx
-import argparse
-import pprint
-import numpy as np
-import shelve
+import betasearch
 
 from docopt import docopt
-from sys import stderr
-from collections import defaultdict
-from _betasearch import *
 
 from whoosh.index import open_dir
 from whoosh.qparser import QueryParser
@@ -71,7 +63,7 @@ def validate_query(bmtext):
             return False, "Error: the query cannot contain more than two wildcard '*' characters."
 
     bm_line = ",".join(bm_lines)
-    g, mat = bs.make_graph(bm_line)
+    g, mat = betasearch.make_graph(bm_line)
 
     # 5. check to see if the matrix is rectangular.
     if len(mat.shape) != 2:
@@ -89,7 +81,7 @@ def validate_query(bmtext):
                 continue
 
             if col < num_cols - 1:
-                if bs.get_neighbour_col(row, col + 1, 1, mat) == None:
+                if betasearch.get_neighbour_col(row, col + 1, 1, mat) == None:
                     return False, "Error: the query cannot contain a hanging '-' character."
 
     # 7. check if there are atleast three residues.
@@ -129,7 +121,7 @@ def run(query_blob, index_dir):
     lines_db = os.path.join(index_dir, "lines.db")
     shelf = shelve.open(lines_db)
 
-    q = bs.Query(query_str)
+    q = betasearch.Query(query_str)
 
     # Whoosh query processing operations.
     whoosh_index = open_dir(os.path.join(index_dir, "whoosh"))
