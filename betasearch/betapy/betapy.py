@@ -3,8 +3,11 @@
 
 $Id: betapy.py,v 9bc7964cd8e5 2012/07/12 15:04:46 hohkhkh1 $
 
-Description:
 
+TODO:
+    - fix gen_bmat_string(...) to remove redundant parsing of pdb header data.
+      i.e. should simply parse and store the header data when creating a
+      Protein object.
 
 """
 
@@ -124,7 +127,6 @@ def get_pdb_resid(self):
 def get_global_id(self):
     return "%s:%s:%s:%s" % (self.pdb_id, self.chain_id, self.pdb_resid,
                             self.single_aa)
-
 @property
 def get_single_aa(self):
     try:
@@ -151,6 +153,10 @@ def get_X1_angle(self):
         return (180.0 / numpy.pi) * calc_dihedral(N, CA, CB, last)
     except:
         return None
+
+@property
+def get_ss(self):
+    return
 
 
 Bio.PDB.Residue.Residue.pdb_id = get_pdb_id
@@ -561,7 +567,7 @@ class DSSPProtein(object):
         struct = PDBParser().get_structure(pdb_fn, pdb_fn)
         model = struct[0]
         dssp = DSSP(model, pdb_fn)
-        
+
         # Map each PDB resid to the corresponding DSSP residue information.
         pdb_resid_to_dssp_info = OrderedDict()
 
@@ -623,6 +629,7 @@ class DSSPProtein(object):
 
         # Map each DSSP index to its Bio.PDB.Residue object.                
         dssp_index_to_res = {}
+        res_to_dssp_index = {}
 
         # Update each Bio.PDB.Residue with its DSSP information.
         for val in dssp:
@@ -631,13 +638,10 @@ class DSSPProtein(object):
 
             pdb_resid = res.id[1:]
             dssp_info = pdb_resid_to_dssp_info[pdb_resid]
+            dssp_index = dssp_info["dssp_index"]
 
-            res.pdb_resid = pdb_resid
-            res.dssp_index = dssp_info["dssp_index"]
-            res.chain_id = res.get_full_id()[2]
-            res.ss = ss
-
-            dssp_index_to_res[res.dssp_index] = res
+            res_to_dssp_index[res.id] = dssp_index
+            dssp_index_to_res[dssp_index] = res
 
         raw_chains = defaultdict(list)
 
@@ -1553,9 +1557,6 @@ class SheetMatrix(AbstractMatrix):
 
         return getattr(self._sheet, attr)
     
-
-
-
     @property
     def sheet(self):
         return self._sheet
@@ -1575,9 +1576,6 @@ class SheetMatrix(AbstractMatrix):
     @property
     def max_strand_length(self):
         return self.sheet.max_strand_length
-
-
-
 
     def __add_peptide_nodes(self, raw_matrix):
         """
@@ -1874,7 +1872,7 @@ class SheetMatrix(AbstractMatrix):
 
         return ":".join(buf_fields)
     
-    def get_bmat_string(self, pdbpath):
+    def get_bmat_string(self, pdb_fn):
         """Get a string representation of this class
 
         """
@@ -1934,13 +1932,16 @@ class SheetMatrix(AbstractMatrix):
 
         pdb_id = self.sheet_id.split("-")[1].lower()
         chain_id = self.chain_id.upper()
-        pdb_fn = os.path.join(os.path.expanduser(pdbpath),
-                pdb_id[1:3], "pdb%s.ent.gz" % pdb_id)
-
         parser = PDBParser()
 
-        with gzip.open(pdb_fn) as f: 
-            structure = parser.get_structure(self.pdb_id, f)
+        if pdb_fn.endswith(".gz"):
+            f = gzip.open(pdb_fn)
+        else:
+            f = open(pdb_fn)
+
+        structure = parser.get_structure(self.pdb_id, f)
+
+        f.close()
 
         header = parser.get_header()
         mol_id = None
@@ -2091,7 +2092,7 @@ class Protein(DSSPProtein):
 
         """
 
-        dssp.DSSPProtein.__init__(self, pdb_fn)
+        DSSPProtein.__init__(self, pdb_fn)
 
         self.pdb_fn = pdb_fn
         self.ptg = make_graphs(pdb_fn, "none", "dssp")[0]
@@ -2153,6 +2154,8 @@ class Protein(DSSPProtein):
 
         # Wrap each SheetMatrix using a BetaMatrix.
         for sheet in self.iter_sheets():
+            chain = self[sheet.chain_id]
+            beta_matrix = BetaMatrix(sheet.build_sheet_matrix(), chain)
             try:
                 chain = self[sheet.chain_id]
                 beta_matrix = BetaMatrix(sheet.build_sheet_matrix(), chain)
@@ -2192,7 +2195,7 @@ class Protein(DSSPProtein):
         return
 
 
-class BetaMatrix(object):
+class BetaMatrix:
     """This class wraps the betapy.SheetMatrix class.
 
     """
@@ -2202,7 +2205,7 @@ class BetaMatrix(object):
 
         Arguments:
             sheet_matrix -- betapy.SheetMatrix object.
-            chain -- dssp.Chain object.
+            chain -- DSSPChain object.
 
         """
 
@@ -2292,6 +2295,9 @@ class BetaMatrix(object):
     @property
     def ptg(self): return self.sheet.ptg
 
+    @property
+    def orients(self): return self.sheet_matrix.orients
+
     def _init_residues(self, chain):
         """Copy the bridge- and hydrogen-bond partner information from
         the equivalent residues of the DSSPChain object.
@@ -2301,12 +2307,12 @@ class BetaMatrix(object):
         for res in self.iter_residues():
             dssp_res = chain[res.pdb_resid]
 
-            res.dssp_index = dssp_res.dssp_index
-            res.ss = dssp_res.ss
+            #res.dssp_index = dssp_res.dssp_index
+            #res.ss = dssp_res.ss
 
-            res.acc = dssp_res.acc
-            res.phi = dssp_res.phi
-            res.psi = dssp_res.psi
+            #res.acc = dssp_res.acc
+            #res.phi = dssp_res.phi
+            #res.psi = dssp_res.psi
 
             res.bp1 = dssp_res.bp1
             res.bp2 = dssp_res.bp2
@@ -2795,3 +2801,6 @@ class BetaMatrix(object):
             yield json.dumps(json_dict)
 
         return
+
+    def get_bmat_string(self, pdb_fn):
+        return self.sheet_matrix.get_bmat_string(pdb_fn)
