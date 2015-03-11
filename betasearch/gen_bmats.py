@@ -4,11 +4,9 @@
 $Id: gen_bmats.py,v 5ae03e735bb2 2012/07/01 05:53:21 hohkhkh1 $
 
 Description:
-
     Generate the beta-matrices from a list of pdb structures read from stdin.
     Each line in stdin must either be a pdb id or a file path to a pdb file.
     The beta-matrices are then written to stdout in the following format:
-        TODO
 
 Usage:
     TODO
@@ -17,6 +15,7 @@ Usage:
 
 import os
 import sys
+import re
 import tempfile
 import betapy
 import pprint
@@ -25,16 +24,14 @@ import glob
 from sys import stderr
 
 TMP_DIR = "/tmp"
-PDB_PATH = os.path.expanduser("~/PDB")
 
-
-
-def is_pdbid(s):
-    return len(s) == 4
+# Regex to match the basename of a valid PDB file.
+PDB_BASENAME_RE = \
+    re.compile(r"(pdb)?([0-9A-Za-z]{4})\.(ent|pdb)(\.gz)?")
 
 
 def is_gzipped(fn):
-    return os.path.splitext(os.path.basename(fn))[-1] == ".gz"
+    return fn.endswith(".gz")
 
 
 def get_gzipped_fn(fn):
@@ -47,36 +44,19 @@ def get_gzipped_fn(fn):
     return gz_fn
 
 
-def get_pdb_fn(pdb_id, pdbpath):
-    pdb_id = pdb_id.lower()
-    pdb_fn = None
-    glob_pat = os.path.join(pdbpath, pdb_id[1:3], "*%s*" % pdb_id)
-
-    for fn in glob.iglob(os.path.join(pdbpath, pdb_id[1:3], "*%s*" % pdb_id)):
-        pdb_fn = fn
-        break
-
-    assert(pdb_fn != None)
-
-    return pdb_fn
-
-
 def gen_beta_matrices(pdb_fn):
     tmp_fn = None
     protein = None
 
-    try:
-        protein, tmp_fn = betapy.parse_pdb_fn(pdb_fn)
-    except Exception, e:
-        sys.stderr.write("ERROR: %s\n" % e)
-    finally:
-        if tmp_fn and os.path.isfile(tmp_fn):
-            os.remove(tmp_fn)
+    protein, tmp_fn = betapy.parse_pdb_fn(pdb_fn)
+
+    if tmp_fn and os.path.isfile(tmp_fn):
+        os.remove(tmp_fn)
 
     if protein == None:
         return
 
-    for mat in protein.gen_sheet_matrices():
+    for mat in protein.iter_beta_matrices():
         if mat == None:
             continue
 
@@ -85,10 +65,6 @@ def gen_beta_matrices(pdb_fn):
             
         yield mat
 
-    return
-
-
-def gen_dssp_beta_matrices(pdb_fn):
     return
 
 
@@ -108,7 +84,6 @@ def parse_options():
 
     parser = argparse.ArgumentParser(usage=usage_str)
 
-    # OUTPUT FILE OPTIONS
     parser.add_argument("-b", "--bmatsfn", 
             help="file in which the beta-matrices will be written, one per line.")
     parser.add_argument("-n", "--natpairsfn",
@@ -117,7 +92,6 @@ def parse_options():
             help="file in which the native beta-sheet topologies will be written.")
 
     parser.add_argument("--stdout", default=False, action="store_true")
-    parser.add_argument("-p", "--pdbpath", required=True)
     parser.add_argument("-r", "--showresids", default=False, action="store_true")
     parser.add_argument("-B", "--halfbarrels", default=False, action="store_true")
     parser.add_argument("-j", "--json", action="store_true", default=False)
@@ -135,10 +109,6 @@ def parse_options():
 if __name__ == "__main__":
     options = parse_options()
 
-    assert os.path.isdir(options.tempdir), "ERROR: %s doesn't exist\n" % options.tempdir
-    assert os.path.isdir(options.pdbpath), "ERROR: %s doesn't exist\n" % options.pdbpath
-
-    PDB_PATH = os.path.expanduser(options.pdbpath)
     TMP_DIR = options.tempdir
 
     if options.stdout:
@@ -151,46 +121,40 @@ if __name__ == "__main__":
         topos_f = open(options.toposfn, "ab")
 
     #
-    # Read pdbids/pdb file paths one line at a time from stdin.
+    # Read pdb file paths one line at a time from stdin.
     #
 
-    for line in sys.stdin:
-        line = line.strip()
+    #for line in sys.stdin:
+    for line in ["1UBQ.pdb"]:
+        pdb_fn = line.strip()
         delete_pdb_fn = False
 
-        if os.path.isfile(line):
-            pdb_fn = line
-        else:
-            pdbid = line
-            pdb_fn = get_pdb_fn(pdbid, options.pdbpath)
-
         if not os.path.isfile(pdb_fn):
-            sys.stderr.write("ERROR: %s was not found, skipping...\n" % pdb_fn)
+            sys.stderr.write("ERROR: %s was not found, skipping...%s"
+                    % (pdb_fn, os.linesep))
             continue
 
-        if not is_gzipped(pdb_fn):
+        if is_gzipped(pdb_fn):
             pdb_fn = get_gzipped_fn(pdb_fn)
             delete_pdb_fn = True
 
-        #
-        # NOTE: this script assumes that pdb files are named in the form:
-        #   
-        #   pdb1ubq.ent or pdb1ubq.ent.gz
-        #
-        # that is: pdb<lower case pdb id>.ent[.gz]
-        #
+        # NOTE: this script assumes that pdb filenames assume the format
+        # specified by PDB_BASENAME_RE.
+        pdb_basename = os.path.basename(pdb_fn)
+        pdb_basename_match = PDB_BASENAME_RE.match(pdb_basename)
 
-        _id = os.path.basename(pdb_fn).split(".")[0]
+        assert(pdb_basename_match)
 
-        if _id.startswith("pdb"):
-            _id = _id.replace("pdb", "")
+        pdb_id = pdb_basename_match.group(2)
+
+        if pdb_id.startswith("pdb"):
+            pdb_id = pdb_id.replace("pdb", "")
 
         for mat in gen_beta_matrices(pdb_fn):
             # Sometimes ptgraph2 will incorrectly detect pdbids and set them to
             # "0000". Check for this and set it to the id implied by the file
             # name of the pdb file.
-
-            mat.sheet_id = mat.sheet_id.replace("-0000-", "-" + _id + "-") 
+            mat.sheet_id = mat.sheet_id.replace("-0000-", "-" + pdb_id + "-")
 
             if options.showresids:
                 bm_buf = \
@@ -199,7 +163,7 @@ if __name__ == "__main__":
             elif options.json:
                 bm_buf = mat.get_json_string()
             else:
-                bm_buf = mat.get_bmat_string(pdbpath=options.pdbpath)
+                bm_buf = mat.get_bmat_string(pdb_fn)
 
             # Find the native strand pairs and orientations.
             strand_nums = set()
