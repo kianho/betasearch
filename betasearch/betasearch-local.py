@@ -1,11 +1,23 @@
 #!/usr/bin/env python2.7
 """
 
-Revision: $Id$
-Author: Kian Ho <hui.kian.ho@gmail.com>
-Created:
+Author:
+    Kian Ho <hui.kian.ho@gmail.com>
+
 Description:
-    None
+    ...
+
+Usage:
+    betasearch-local.py -d DIR [-q FILE] [options]
+
+Options:
+    -q, --queries FILE              Read one-or-more queries from FILE.
+                                    Otherwise read the queries from /dev/stdin.
+    -d, --index-dir DIR             Directory containing the betasearch index.
+    -o, --output FILE               Write the matching beta-matrices to FILE.
+                                    Otherwise write to /dev/stdout by default.
+    --validate                      TBD
+    --DEBUG                         TBD
 
 """
 
@@ -19,6 +31,7 @@ import pprint
 import numpy as np
 import shelve
 
+from docopt import docopt
 from sys import stderr
 from collections import defaultdict
 from _betasearch import *
@@ -27,12 +40,7 @@ from whoosh.index import open_dir
 from whoosh.qparser import QueryParser
 from whoosh.query import *
 
-DEFAULT_INDEX = os.path.expanduser("~/workspaces/betasearch-py-local/experiments/data/betasearch/astral95_bmats_db/")
-SEPCHAR = "^"
-
-
-def get_pdb_id(sheet_id):
-    return sheet_id.split("-")[1].lower()
+SEP_CHAR = "^"
 
 
 def validate_query(bmtext):
@@ -92,134 +100,75 @@ def validate_query(bmtext):
     if not graph_is_connected(g):
         return False, "Error: all the trimers in the query need to overlap."
 
-    global SEPCHAR
+    global SEP_CHAR
 
-    return True, SEPCHAR + bm_line
-
-
-def run_query(line, index_dir=DEFAULT_INDEX):
-    req_paths = { "whoosh-dir" : os.path.join(index_dir, "whoosh"), 
-                  "trimers-dir" : os.path.join(index_dir, "trimers") }
-
-    q = bs.Query(line)
-
-    index_ = open_dir(req_paths["whoosh-dir"])
-    reader_ = index_.reader()
-    searcher_ = index_.searcher()
-
-    parser_ = QueryParser("trimers", index_.schema)
-    query_ = parser_.parse(q.get_whoosh_query_str())
-    results_ = searcher_.search(query_, limit=None)
-
-    return q.verify(results_, req_paths["trimers-dir"])
+    return True, SEP_CHAR + bm_line
 
 
-def do_query(query_str, index_dir=DEFAULT_INDEX):
-    """
-    """
+def run(query_blob, index_dir):
+    r"""Run a single query defined on a single line.
 
-    return run_query(":" + query_str, index_dir)
+    Parameters
+    ----------
+        query_blob : str
+            The query "blob" of the form: "<query_id> <query_str>".
+        index_dir : str
+            Path to the betasearch index directory.
 
-
-def parse_options():
-    """Parse the command-line options.
-
-    Returns:
-       optparse.OptionParser object with the command-line parameter
-       values. 
+    Yields
+    ------
+        query_id : str
+            Unique user-specified query identifier.
+        bmat_result : str
+            One-line csv representation of a matching beta-matrix.
 
     """
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-q", "--queries")
-    parser.add_argument("-s", "--singlequery")
-    parser.add_argument("-i", "--indexdir")
-    parser.add_argument("-H", "--humanreadable", action="store_true", default=False)
-    parser.add_argument("--validate", default=False, action="store_true")
-    parser.add_argument("--stdin", default=False, action="store_true",
-            help="Read queries from stdin.")
-    parser.add_argument("--DEBUG", default=False, action="store_true")
-    options = parser.parse_args()
+    vals = query_blob.split(SEP_CHAR)
+    query_id, query_str = vals[0], (":" + vals[1])
+    lines_db = os.path.join(index_dir, "lines.db")
+    shelf = shelve.open(lines_db)
 
-    if len(sys.argv) < 2:
-        parser.print_help()
-        sys.exit(-1)
+    q = bs.Query(query_str)
 
-    return options
+    # Whoosh query processing operations.
+    whoosh_index = open_dir(os.path.join(index_dir, "whoosh"))
+    whoosh_reader = whoosh_index.reader()
+    whoosh_searcher = whoosh_index.searcher()
 
+    whoosh_query_parser = QueryParser("trimers", whoosh_index.schema)
+    whoosh_query = whoosh_query_parser.parse(q.get_whoosh_query_str())
+    whoosh_results = whoosh_searcher.search(whoosh_query, limit=None)
 
-def run(line, index_dir=DEFAULT_INDEX, VALIDATE_QUERY=False, DEBUG=False, QUIET=False, NHITS_ONLY=False):
-    """Run a single query defined on a single line.
+    # Get the matching beta-matrices from disk (using shelve).
+    results_gen = \
+        (shelf[sheet_id] for sheet_id in q.verify(whoosh_results, index_dir))
 
-    Arguments:
-        line -- 
+    for bmat_result in results_gen:
+        yield query_id, bmat_result
 
-    Returns:
-        the number of hits (sheets matching the query).
+    shelf.close()        
 
-    """
-
-    vals = line.strip().split( SEPCHAR )
-    query_id = vals[0]
-    bmtext = vals[-1]
-
-    if VALIDATE_QUERY:
-        is_valid, err_txt = validate_query(bmtext)
-
-        if not is_valid:
-            sys.stderr.write("ERROR: the query isn't valid\n")
-            sys.stderr.write("ERRLOG: %s\n" % err_txt) 
-            return 0
-
-    try:
-        if NHITS_ONLY:
-            return len(list(do_query(bmtext, index_dir)))
-        else:
-            if options.humanreadable:
-                lines_db = os.path.join(options.indexdir, "lines.db")
-                shelf = shelve.open(lines_db)
-
-            for sheet_id, mol_name, common_name, sci_name in do_query(bmtext, index_dir):
-                print sheet_id, mol_name, common_name, sci_name
-
-                if options.humanreadable:
-                    raw_bmat_line = shelf[sheet_id]
-                    print os.linesep.join(raw_bmat_line.split( SEPCHAR )[-1].split(","))
-                    print
-
-        if options.humanreadable:
-            shelf.close()
-        
-    except Exception, e:
-        sys.stderr.write(str(e))
-        sys.stderr.write("\n")
-        if not QUIET:
-            print "%s\tEXIT_FAILURE" % query_id
-        return 0 
-
-    return 0
+    return
 
 
 if __name__ == "__main__":
-    options = parse_options()
+    opts = docopt(__doc__)
 
-    if options.stdin:
-        #
-        # Read the queries line-by-line from stdin.
-        #
-        for line in sys.stdin:
-            line = line.strip()
-            run(line, index_dir=options.indexdir)
+    if opts["--output"]:
+        fout = open(opts["--output"], "wb")
+    else:
+        fout = sys.stdout
 
-    elif options.singlequery:
-        # Run a single query from the --singlequery command line option
-        # argument.
-        run(options.singlequery, options.indexdir)
+    if opts["--queries"]:
+        fin = open(opts["--queries"], "rb")
+    else:
+        fin = sys.stdin
 
-    elif options.queries:
-        #
-        # Run multiple queries from a single file.
-        #
-        with open(options.queries, "rb") as f:
-            for line in f:
-                run(line, options.indexdir)
+    # Run multiple queries.
+    for query_str in (q.strip() for q in fin):
+        for query_id, bmat_result in run(query_str, opts["--index-dir"]):
+            fout.write("{} {}".format(query_id, bmat_result) + os.linesep)
+
+    fout.close()
+    fin.close()
