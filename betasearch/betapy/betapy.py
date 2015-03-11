@@ -49,7 +49,7 @@ from sys import stderr
 from subprocess import Popen, PIPE
 from itertools import product, combinations, izip, islice, imap, permutations
 from collections import defaultdict, OrderedDict, namedtuple, deque
-from ptgraph2 import ptutils, make_graphs
+from betasearch.ptgraph2 import ptutils, make_graphs
 
 
 ## Monkey patches

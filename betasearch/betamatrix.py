@@ -18,7 +18,7 @@ import glob
 
 from collections import defaultdict, deque
 from pprint import pprint
-from _betasearch import *
+from betasearch import *
 
 
 three_to_one = defaultdict(lambda : None,
