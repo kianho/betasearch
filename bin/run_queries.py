@@ -144,8 +144,6 @@ def run(query_blob, index_dir):
     whoosh_query = whoosh_query_parser.parse(q.get_whoosh_query_str())
     whoosh_results = whoosh_searcher.search(whoosh_query, limit=None)
 
-    print list(q.verify(whoosh_results, os.path.join(index_dir, "trimers")))
-
     # Get the matching beta-matrices from disk (using shelve).
     results_gen = \
         (shelf[metadata[0]] for metadata in
