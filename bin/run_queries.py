@@ -16,7 +16,7 @@ Options:
     -d, --index-dir DIR             Directory containing the betasearch index.
     -o, --output FILE               Write the matching beta-matrices to FILE.
                                     Otherwise write to /dev/stdout by default.
-    --validate                      TBD
+    -H, --human-readable            Human-readable results.
     --DEBUG                         TBD
 
 """
@@ -35,11 +35,23 @@ from whoosh.query import *
 SEP_CHAR = "^"
 
 
-def validate_query(bmtext):
-    if len(bmtext) == 0:
+def validate_query(query_str):
+    r"""Validate a query string, ensuring that it is well-formed.
+
+    Parameters
+    ----------
+        query_str : str
+
+    Returns
+    -------
+        ...
+
+    """
+
+    if len(query_str) == 0:
         return False, "Error: the query cannot be empty"
 
-    bm_lines = [ row.rstrip().replace(" ", '.') for row in bmtext.split(",") ]
+    bm_lines = [ row.rstrip().replace(" ", '.') for row in query_str.split(",") ]
 
     # find the length of the widest line.
     max_width = len(bm_lines[0])
@@ -58,8 +70,8 @@ def validate_query(bmtext):
     if re.match("^[a-zA-Z\.\-\*]+$", "".join(bm_lines)) == None:
         return False, "Error: the query contains invalid characters, please use alphabetic characters to denote amino acids."
 
-    if "*" in bmtext:
-        if re.subn(r"\*", "~", bmtext)[1] > 2:
+    if "*" in query_str:
+        if re.subn(r"\*", "~", query_str)[1] > 2:
             return False, "Error: the query cannot contain more than two wildcard '*' characters."
 
     bm_line = ",".join(bm_lines)
@@ -89,12 +101,10 @@ def validate_query(bmtext):
         return False, "Error: the query needs to contain at least three connected residues."
 
     # 8. check if the implied graph consists of a single connected component.
-    if not graph_is_connected(g):
+    if not betasearch.graph_is_connected(g):
         return False, "Error: all the trimers in the query need to overlap."
 
-    global SEP_CHAR
-
-    return True, SEP_CHAR + bm_line
+    return True, bm_line
 
 
 def run(query_blob, index_dir):
@@ -116,8 +126,10 @@ def run(query_blob, index_dir):
 
     """
 
-    vals = query_blob.split(SEP_CHAR)
-    query_id, query_str = vals[0], (":" + vals[1])
+    vals = query_blob.split()
+    query_id, query_str = vals[0], vals[1]
+    is_valid, query_str = validate_query(query_str)
+
     lines_db = os.path.join(index_dir, "lines.db")
     shelf = shelve.open(lines_db)
 
@@ -160,7 +172,15 @@ if __name__ == "__main__":
     # Run multiple queries.
     for query_str in (q.strip() for q in fin):
         for query_id, bmat_result in run(query_str, opts["--index-dir"]):
-            fout.write("{} {}".format(query_id, bmat_result) + os.linesep)
+            if opts["--human-readable"]:
+                cols = bmat_result.split(SEP_CHAR)
+                meta_data = SEP_CHAR.join(cols[:-1])
+                bmat_rows = os.linesep.join(cols[-1].split(","))
+                output_blob = meta_data + os.linesep + bmat_rows + os.linesep * 2
+            else:
+                output_blob = query_id + " " + bmat_result + os.linesep
+
+            fout.write(output_blob)
 
     fout.close()
     fin.close()
