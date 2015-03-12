@@ -1,8 +1,10 @@
 # BetaSearch
 
-Please refer to the original betasearch website
+**WARNING**: We are currently in the process of refactoring BetaSearch, as such
+some of the documentation is still incomplete.  Please refer to the original
+betasearch website
 ([http://betasearch.kianho.net](http://betasearch.kianho.net)) whilst this
-repository is being updated.
+repository is being updated. Thank you for your patience!
 
 ## Installation
 
