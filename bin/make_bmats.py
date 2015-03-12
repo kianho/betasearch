@@ -31,7 +31,7 @@ import betasearch.betapy as betapy
 from sys import stderr
 from docopt import docopt
 
-TMP_DIR = "/var/tmp"
+TMP_DIR = "/tmp"
 VERBOSE = False
 
 # Regex to match the basename of a valid PDB file.
@@ -126,33 +126,6 @@ if __name__ == "__main__":
                 # name of the pdb file.
                 mat.sheet_id = mat.sheet_id.replace("-0000-", "-" + pdb_id + "-")
                 bm_buf = mat.get_bmat_string(pdb_fn)
-
-                # Find the native strand pairs and orientations.
-                strand_nums = set()
-                pairs = []
-                for (s1,s2), is_parallel in mat.orients.iteritems():
-                    orient = "p" if is_parallel else "a"
-                    pairs.append((s1, s2, orient))
-                    strand_nums.add(s1)
-                    strand_nums.add(s2)
-
-                # Sometimes the strand numbers for beta-sheets may not be
-                # contiguous e.g.  1,2,5,6 instead of 1,2,3,4; this is because its
-                # original protein change has multiple beta-sheets.  Make the
-                # strand numbers in the native pairs and topologies contiguous.
-                # NOTE: the strand numbers will remain unchanged in the python
-                # objects themselves.
-                contig_strand_nums = {}
-                for i, num in enumerate(sorted(strand_nums)):
-                    contig_strand_nums[ num ] = i + 1
-
-                # Generate the string representation of the native strand pairs.
-                buf = []
-                for s1, s2, orient in pairs:
-                    contig_s1 = contig_strand_nums[ s1 ]
-                    contig_s2 = contig_strand_nums[ s2 ]
-                    buf.append("%d:%d:%s" % (contig_s1, contig_s2, orient))
-
                 fout.write(bm_buf + os.linesep)
 
             if delete_pdb_fn:
