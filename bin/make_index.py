@@ -34,7 +34,7 @@ from docopt import docopt
 from collections import defaultdict
 from whoosh.fields import Schema, TEXT, STORED
 from whoosh.index import create_in
-from _betasearch import trimers_gen, update_disk_record
+from betasearch import trimers_gen, update_disk_record
 
 
 if __name__ == "__main__":
