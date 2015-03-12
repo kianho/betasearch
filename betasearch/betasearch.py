@@ -492,12 +492,16 @@ class Query:
 
     def verify(self, results, trimers_dir):
         if len(results) == 0:
-            yield "None"
             return
 
+        # If there is only one trimer in the query, then there is no need to
+        # filter/verify the results.
         if len(self._trimers) == 1:
             for hit in results:
-                yield str(hit["sheet_id"])
+                yield (hit["sheet_id"], hit["molecule_name"],
+                        hit["organism_common_name"],
+                        hit["organism_scientific_name"])
+                #yield str(hit["sheet_id"])
             return
 
         if self._first_l_trimer != None:
