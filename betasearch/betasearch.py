@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
 
-Revision: $Id$
-Author: Kian Ho <hui.kian.ho@gmail.com>
-Created:
+Author:
+    Kian Ho <hui.kian.ho@gmail.com>
+
 Description:
-    None
+    ...
 
 """
 
