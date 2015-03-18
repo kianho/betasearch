@@ -40,14 +40,39 @@ AAS = "ARNDCQEGHILKMFPSTWYV"
 
 
 class Elbow:
-    """
+    """This class stores the row and column indices of a trimer "elbow", which is
+    the central residue in the trimer.
+    
+    For example, 'B' is the elbow of the L-trimer below:
+
+       0 1 2            
+      0. A .
+      1. B C
+         ^
+         :.. Elbow @ row 1, column 1
+
     """
 
     def __init__(self, row, col):
+        """Constructor.
+
+        Parameters
+        ----------
+        row : int
+            Row co-ordinate of the elbow.
+        col : int
+            Column co-ordinate of the elbow.
+
+        """
         self.row = row
         self.col = col
 
     def same(self, other):
+        """Check if this elbow is in the same position as the other.  This
+        assumes that the parent trimers of both elbows are from the same
+        beta-matrix.
+
+        """
         return self.row == other.row and self.col == other.col
 
 
