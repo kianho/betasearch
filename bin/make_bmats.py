@@ -26,6 +26,8 @@ import re
 import tempfile
 import pprint
 import glob
+import gzip
+import shutil
 import betasearch.betapy as betapy
 
 from sys import stderr
@@ -40,14 +42,35 @@ PDB_BASENAME_RE = \
 
 
 def get_gunzipped_fn(fn):
+    """Transparently return a temporary path to a gunzipped file. The original
+    file path is returned if the file is not gzipped.
+
+    Parameters
+    ----------
+    fn : str
+        Path to the gzip file.
+
+    Returns
+    -------
+    str
+        Path to the temporary gunzipped file.
+    bool
+        True if the original file was a gzip file, False otherwise.
+
+    """
+
     if not fn.endswith(".gz"):
         return fn, False
 
+    # temporary gunzipped file location.
     gunzipped_fn = \
         os.path.join(TMP_DIR, os.path.basename(os.path.splitext(fn)[0]))
 
-    # TODO: yuck, must correct this.
-    os.system("gunzip -f -c %s > %s" % (fn, gunzipped_fn))
+    # pythonically gunzip the file into a temporary file.
+    with open(gunzipped_fn, "wb") as tmp:
+        shutil.copyfileobj(gzip.open(fn), tmp)
+
+    assert(os.path.exists(gunzipped_fn))
 
     return gunzipped_fn, True
 
