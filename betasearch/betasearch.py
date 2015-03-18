@@ -1063,13 +1063,3 @@ def enforced_wc_expansions_iter(line):
         yield line
 
     return
-
-
-if __name__ == "__main__":
-    # wc_line = "a.c,t.*,ghi"
-    # wc_line = "a.cxt,..*.v,ghirq"
-    wc_line = "T.T,TC*,T.T"
-    print line_is_connected(wc_line)
-    pprint.pprint(wc_line.split(','))
-
-    print len(list(wc_expansions_iter(wc_line)))
