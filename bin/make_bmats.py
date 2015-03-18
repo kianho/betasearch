@@ -34,7 +34,6 @@ from sys import stderr
 from docopt import docopt
 
 TMP_DIR = "/tmp"
-VERBOSE = False
 
 # Regex to match the basename of a valid PDB file.
 PDB_BASENAME_RE = \
@@ -42,13 +41,13 @@ PDB_BASENAME_RE = \
 
 
 def get_gunzipped_fn(fn):
-    """Transparently return a temporary path to a gunzipped file. The original
-    file path is returned if the file is not gzipped.
+    """Generated temporary path to a gunzipped copy of a file. The original file
+    path is returned if the file is not gzipped.
 
     Parameters
     ----------
     fn : str
-        Path to the gzip file.
+        Path to the gzip file (may not be gzipped).
 
     Returns
     -------
@@ -76,6 +75,20 @@ def get_gunzipped_fn(fn):
 
 
 def gen_beta_matrices(pdb_fn):
+    """Generate the beta-matrices from a given PDB file.
+
+    Parameters
+    ----------
+    pdb_fn : str
+        Path to a PDB file.
+
+    Yields
+    ------
+    betapy.BetaMatrix
+        A beta-matrix object.
+
+    """
+
     tmp_fn = None
     protein = None
 
@@ -100,15 +113,29 @@ def gen_beta_matrices(pdb_fn):
     return
 
 
-if __name__ == "__main__":
-    opts = docopt(__doc__)
+def write_bmats_fn(bmats_fn, paths_fn=None):
+    """Generate beta-matrices from PDB files and write them to a file.
+
+    Parameters
+    ----------
+    bmats_fn : str
+        Path to the file in which the beta-matrices will be written.
+    paths_fn : str, optional
+        File containing PDB file paths, one per line. If None, the paths will be
+        read from stdin (default: None).
+
+    Returns
+    -------
+    None
+
+    """
 
     #
     # Read pdb file paths one line at a time from stdin.
     #
-    with open(opts["--output"], "wb") as fout:
-        if opts["--input"]:
-            fin = open(opts["--input"], "rb")
+    with open(bmats_fn, "wb") as fout:
+        if paths_fn:
+            fin = open(paths_fn, "rb")
         else:
             fin = sys.stdin
         
@@ -151,3 +178,10 @@ if __name__ == "__main__":
                 os.remove(pdb_fn)
 
         fin.close()
+
+    return
+
+
+if __name__ == "__main__":
+    opts = docopt(__doc__)
+    write_bmats_fn(opts["--output"], opts["--input"])
