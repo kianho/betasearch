@@ -39,12 +39,8 @@ PDB_BASENAME_RE = \
     re.compile(r"(pdb)?([0-9A-Za-z]{4})\.(ent|pdb)(\.gz$)?")
 
 
-def is_gzipped(fn):
-    return fn.endswith(".gz")
-
-
 def get_gunzipped_fn(fn):
-    if not is_gzipped(fn):
+    if not fn.endswith(".gz"):
         return fn, False
 
     gunzipped_fn = \
