@@ -77,10 +77,24 @@ class Elbow:
 
 
 class Span:
-    """
+    """This is a glorified tuple denoting the row or column extents of a given
+    trimer. It is typically used to determine if two trimers overlap in a
+    beta-matrix.
+
     """
 
     def __init__(self, begin, end):
+        """Constructor.
+
+        Parameters
+        ----------
+        begin : int
+            Typically, this is the row/column index of the elbow.
+        end : int
+            The outer row/column index of the trimer.
+
+        """
+
         self.begin = begin
         self.end = end
 
@@ -101,6 +115,25 @@ class Span:
         return (self.begin, self.end)
 
     def same_direction(self, other):
+        """Check if the "direction" of two  spans are the same. For L-trimers,
+        directions beginning from the elbow outwards, horizontally
+        (for column spans) or vertically for (row spans).
+
+        For example:
+
+                    trimer A        trimer B
+
+                                    +ve column span direction 
+                                    <-- .
+             +ve  ^ A               C B | -ve row span direction
+             row  | B C               A v
+             span . -->
+             dir.   -ve column span direction
+
+        Therefore, the corresponding row spans and column spans are in opposite
+        directions between both trimers.
+
+        """
         return ((self.begin - self.end) < 0) == ((other.begin - other.end) < 0)
 
     def overlaps(self, other):
