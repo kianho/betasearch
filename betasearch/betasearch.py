@@ -39,6 +39,7 @@ WC_RE = re.compile("[\*]")
 AAS = "ARNDCQEGHILKMFPSTWYV"
 
 
+
 class Elbow:
     """This class stores the row and column indices of a trimer "elbow", which is
     the central residue in the trimer.
@@ -64,6 +65,10 @@ class Elbow:
             Column co-ordinate of the elbow.
 
         """
+
+        if row < 0 or col < 0:
+            raise ValueError("Row and column indices need to be >= 0")
+
         self.row = row
         self.col = col
 
@@ -94,6 +99,10 @@ class Span:
             The outer row/column index of the trimer.
 
         """
+
+        if (begin < 0 or end < 0) or (begin == end):
+            raise ValueError("Span extent positions need to be >= 0"
+                " and different to each other.")
 
         self.begin = begin
         self.end = end
