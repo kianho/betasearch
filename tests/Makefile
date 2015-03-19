@@ -1,6 +1,9 @@
 SHELL:=/bin/bash
 BIN:=../bin
 
+unit-tests:
+	python ./test_betasearch.py -v
+
 ./test-index/.ds: ./test.bmats
 	mkdir -p $@ && touch $@
 	$(BIN)/make_index.py -d $(@D) < $<
