@@ -14,7 +14,7 @@ Please consider citing our paper if you find BetaSearch useful in your research:
 beta-residue motifs,” _BMC Research Notes_, vol. 5, 2012. [[article][betasearch-doi]]
 
 
-## Beta-matrix output format
+## Generate beta-matrices from PDB files
 
 The `./bin/make_bmats.py` script is used to generate beta-matrices from PDB
 files using the following single-line representation, with fields separated by
@@ -65,6 +65,10 @@ which has a corresponding single-line representation:
 ```
 ...TITLE,..TKVFIQ,LVLHLT..,QRLIF...,...QK...
 ```
+
+## Generate an index from beta-matrices
+
+## Query an index for beta-residue motifs
 
 [1ubq]: http://pdb.org/pdb/explore/explore.do?structureId=1ubq
 [betasearch-doi]: http://dx.doi.org/10.1186/1756-0500-5-391
