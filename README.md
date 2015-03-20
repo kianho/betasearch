@@ -6,16 +6,26 @@ can refer to the original betasearch website
 ([http://betasearch.kianho.net](http://betasearch.kianho.net)) whilst this
 repository is being updated. Thank you for your patience.
 
+## Citation
+
+Please consider citing our paper if you find BetaSearch useful in your research:
+
+- H. K. Ho, G. Gange, M. J. Kuiper, and K. Ramamohanarao, “BetaSearch: a new method for querying
+beta-residue motifs,” _BMC Research Notes_, vol. 5, 2012. [[article][betasearch-doi]]
+
+
 ## Beta-matrix output format
 
 The `./bin/make_bmats.py` script is used to generate beta-matrices from PDB
 files using the following single-line representation, with fields separated by
 the `^` character:
 ```
-$ ls -1 /path/to/*.pdb | python ./bin/make_bmats.py -o ./bmats.txt
+$ ls -1 /path/to/pdb/*.{pdb,ent,pdb.gz,ent.gz} | \
+                python ./bin/make_bmats.py -o ./bmats.txt
 ```
 output (`bmats.txt`):
 ```
+...
 sheet-3cd4-A-003^4^5^4^f^f^15^t cell surface glycoprotein cd4^human^homo sapiens^KKVEF,QLVTC,.SVQ.,..GQ.
 sheet-3cd4-A-002^2^2^2^f^f^4^t cell surface glycoprotein cd4^human^homo sapiens^LL,VL
 sheet-3cd4-A-001^3^3^3^f^f^8^t cell surface glycoprotein cd4^human^homo sapiens^VEL,IIL,AD.
@@ -57,3 +67,4 @@ which has a corresponding single-line representation:
 ```
 
 [1ubq]: http://pdb.org/pdb/explore/explore.do?structureId=1ubq
+[betasearch-doi]: http://dx.doi.org/10.1186/1756-0500-5-391
