@@ -17,7 +17,7 @@ TODO
 
 ### Generate beta-matrices from PDB files
 
-The [./bin/make_bmats.py](bin/make_bmats.py) script is used to generate
+The [bin/make_bmats.py](bin/make_bmats.py) script is used to generate
 beta-matrices from PDB files using the following single-line representation,
 with fields separated by the `^` character:
 ```
