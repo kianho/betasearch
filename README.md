@@ -10,11 +10,11 @@ repository is being updated. Thank you for your patience.
 
 ### Generate beta-matrices from PDB files
 
-The `./bin/make_bmats.py` script is used to generate beta-matrices from PDB
-files using the following single-line representation, with fields separated by
-the `^` character:
+The [./bin/make_bmats.py](bin/make_bmats.py) script is used to generate
+beta-matrices from PDB files using the following single-line representation,
+with fields separated by the `^` character:
 ```
-$ ls -1 /path/to/pdb/*.{pdb,ent,pdb.gz,ent.gz} | \
+ls -1 /path/to/pdb/*.{pdb,ent,pdb.gz,ent.gz} | \
                 python ./bin/make_bmats.py -o ./bmats.txt
 ```
 output (`bmats.txt`):
@@ -62,7 +62,37 @@ which has a corresponding single-line representation:
 
 ### Generate an index from beta-matrices
 
+The [bin/make_index.py](bin/make_index.py) script is used to create a BetaSearch
+index inside as a single directory from a file containing beta-matrices (see
+`bmats.txt` output above):
+```
+python bin/make_index.py -d ./betasearch-index < ./bmats.txt
+```
+
 ### Query an index for beta-residue motifs
+
+The [bin/run_queries.py](bin/run_queries.py) script is used to run
+queries on a BetaSearch index:
+```
+echo "query-XXX V.,LR" | python bin/run_queries -d ./betasearch-index # single query from stdin
+python bin/run_queries -d ./betasearch-index -q ./queries.txt # multiple queries from a file
+```
+where each query is formatted as a single line:
+```
+<query id> <one-line beta-matrix representation>
+```
+for example:
+```
+query-003 I..,VFI,.T.
+```
+queries for the motif:
+```
+I..
+VFI
+.T.
+```
+Multiple queries can be performed by appending more single-line queries.
+
 
 ### Citation
 
