@@ -7,6 +7,12 @@ amino acid residues that are connected by peptide- or hydrogen-bonds.
 
 TODO
 
+## Installation
+
+### Dependencies
+
+TODO
+
 ## Usage
 
 ### Generate beta-matrices from PDB files
