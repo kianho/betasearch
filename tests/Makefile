@@ -1,6 +1,10 @@
 SHELL:=/bin/bash
 BIN:=../bin
 
+
+queries: ./test-index/.ds
+	python $(BIN)/run_queries.py -q <( echo "query-000 V.,LR" ) -d $(<D) -H
+
 unit-tests:
 	python ./test_betasearch.py -v
 
