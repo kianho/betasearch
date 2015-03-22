@@ -8,7 +8,7 @@ which are projections of beta-sheets onto a matrix of amino acid characters.
 
 For example, the beta-sheet of ubiquitin:
 
-![Ubiquitin - PDB ID: 1UBQ][1ubq-img]
+![Ubiquitin - PDB ID: 1UBQ](images/Ubiquitina-scaled.png)
 
 will be projected to the beta-matrix (see "[Generate beta-matrices from PDB files](#generate-beta-matrices-from-pdb-files)"):
 ```
