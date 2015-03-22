@@ -2,16 +2,62 @@
 
 ## Overview
 
-BetaSearch is a fast method for searching beta-sheets for clusters of
-amino acid residues that are connected by peptide- or hydrogen-bonds.
+BetaSearch is a fast method for indexing and querying beta-sheets for substructures
+composed of peptide- or hydrogen-bonded residues. Beta-sheets are indexed as _beta-matrices_,
+which are projections of beta-sheets onto a matrix of amino acid characters.
 
-TODO
+For example, the beta-sheet of ubiquitin:
+
+![Ubiquitin - PDB ID: 1UBQ][1ubq-img]
+
+will be projected to the beta-matrix (see "[Generate beta-matrices from PDB files](#generate-beta-matrices-from-pdb-files)"):
+```
+...TITLE            
+..TKVFIQ            
+LVLHLT..            
+QRLIF...            
+...QK...            
+```
+which can be queried for the following substructure (see "[Query an index for
+beta-residue motifs](#query-an-index-for-beta-residue-motifs)"):
+```
+I..
+VFI
+.T.
+```
+which is found in the top three rows of the beta-matrix.
 
 ## Installation
 
+First, clone this repository:
+```
+git clone git@github.com:kianho/betasearch.git
+```
+then install the dependencies below.
+
 ### Dependencies
 
-TODO
+BetaSearch was developed for Python 2.7 using the following libraries:
+
+- NumPy
+- BioPython
+- Whoosh
+- NetworkX
+- docopt
+- ptgraph2 (included in this repository)
+
+which can be installed in Ubuntu using the following commands:
+```
+sudo apt-get install python-numpy python-biopython
+sudo apt-get install python-whoosh python-networkx python-docopt
+```
+or via the [Anaconda Python Distribution](http://continuum.io/downloads):
+```
+conda install numpy biopython matplotlib whoosh pip
+pip install docopt
+```
+
+
 
 ## Usage
 
@@ -100,6 +146,46 @@ VFI
 ```
 Multiple queries can be performed by appending more single-line queries.
 
+#### Valid query motifs
+
+Queries must:
+- be composed of three or more **connected** residues,
+- contain only residues from the 20 standard amino acids,
+- form a rectangular matrix, padded using the "`.`" character.
+
+For example:
+```
+IVK       IV      I     MI.    .K..
+          .K      V     .KE    MIKE
+                  K            .A..
+                               .N..
+```
+
+#### Invalid  query motifs
+Examples of invalid queries:
+```
+
+IV              IV            IVL.       
+                 .            ....       
+                 K            KIAN       
+
+(< 3 residues)  (disconnected residues)  
+
+
+..R.
+KIAN
+..O.
+                                                
+("R" is not one of the 20 standard amino acids)
+
+
+KI
+.AN.
+..AIK
+
+(non-rectangular, missing "." padding in the
+first and second rows)
+```
 
 ### Citation
 
@@ -113,4 +199,6 @@ beta-residue motifs,” _BMC Research Notes_, vol. 5, 2012. [[article][betasearc
 see [CONTRIBUTORS.md](CONTRIBUTORS.md)
 
 [1ubq]: http://pdb.org/pdb/explore/explore.do?structureId=1ubq
+[1ubq-img]: Ubiquitina-scaled.png
 [betasearch-doi]: http://dx.doi.org/10.1186/1756-0500-5-391
+
