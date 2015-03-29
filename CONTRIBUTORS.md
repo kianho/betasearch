@@ -2,7 +2,7 @@
 
 - [Zay Muang Muang Aye](https://au.linkedin.com/in/zaythedatascientist), PhD Candidate, The University of Melbourne
   - He is keeping a watchful eye on the machine hosting the [BetaSearch web
-    interface](http://betasearch.kianho.net).
+    interface](http://porthos.cis.unimelb.edu.au:2081).
 
 ## Funding
 
