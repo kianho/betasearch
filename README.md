@@ -27,6 +27,11 @@ VFI
 ```
 which is found in the top three rows of the beta-matrix.
 
+## Web-server
+
+You can try BetaSearch for yourself via the web-interface at
+- http://porthos.cis.unimelb.edu.au:2081/
+
 ## Installation
 
 First, clone this repository:
