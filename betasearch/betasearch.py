@@ -5,7 +5,7 @@ Author:
     Kian Ho <hui.kian.ho@gmail.com>
 
 Description:
-    ...
+    This is the main source file for betasearch.
 
 """
 
@@ -22,17 +22,132 @@ import time
 from collections import defaultdict, deque
 from itertools import product
 
-NO_OVERLAP = 0
-BRIDGE = 1
-PEPTIDE = 2
-OPP_BRIDGE = 4
-OPP_PEPTIDE = 5
-
 L_TRIMER = 1
 V_TRIMER = 3
 H_TRIMER = 5
 SYM_V_TRIMER = 15
 SYM_H_TRIMER = 31
+
+# Trimer overlap types:
+#
+#   NO_OVERLAP, BRIDGE, PEPTIDE, OPP_BRIDGE, OPP_PEPTIDE
+#
+# These constants indicate the possible configurations in which trimers of the
+# same beta-matrix may overlap.
+#
+# For example, in the hypothetical beta-matrix:
+#
+#   A . C D
+#   E F G H
+#   I J . L
+#
+# the following trimer overlap types exist (I've only described a subset of
+# trimers and overlaps in the interests of brevity):
+#
+#   NO_OVERLAP
+#   ----------
+#
+#   There is no overlap
+#
+#       (L-trimer)          (H-trimer)
+#
+#               C           D
+#   between   F G     and   H    
+#                           L
+#
+#   where there both trimers are adjacent but do not overlap.
+#
+#                             
+#   BRIDGE
+#   ------
+#
+#   There is a "bridge" overlap (ie. across an inter-strand bridge/h-bond
+#   pairing)
+#
+#           (L-trimer)      (L-trimer)
+#
+#                 C             C
+#   between     F G     and     G H
+#
+#
+#   where "G" is the "elbow" for both L-trimers and an overlap occurs across
+#   the same row-span (see the documentation for the Span class) in
+#   the same G -> C direction.
+#
+#
+#           (L-trimer)      (H-trimer)
+#
+#                 D             D
+#   between     G H     and     H
+#                               L
+#
+#   where "H" is the elbow for both trimers and and overlap occurs across
+#   the same row-span in the same H -> D direction
+#
+#
+#   PEPTIDE
+#   -------
+#
+#   There is a "peptide" overlap (ie. across the same peptide bond)
+#
+#           (L-trimer)      (L-trimer)
+#
+#               A
+#   between     E F     and     E F
+#                               I
+#
+#   where "E" is the elbow for both trimers and an overlap occurs across the
+#   same column-span in the same E -> F direction.
+#
+#
+#   OPP_BRIDGE
+#   ----------
+#
+#           (L-trimer)      (L-trimer)
+#
+#               F             F G
+#   between   I J     and     J         (L-trimers)
+#
+#   where "J" is the elbow for the left trimer and "F" is the elbow for the
+#   right trimer and an overlap occurs across the same row-span but in the
+#   opposite directions:
+#
+#       J -> F for the left L-trimer
+#       F -> J for the right L-trimer
+#
+#
+#           (L-trimer)      (V-trimer)
+#
+#               C D             D
+#   between       H     and     H
+#                               L
+#
+#   where "H" is the elbow for both trimers and an overlap occurs across
+#   the same row-span but in opposite directions:
+#
+#       D -> H for the L-trimer
+#       H -> D for the H-trimer
+#
+#
+#   OPP_PEPTIDE
+#   -----------
+#
+#           (H-trimer)      (L-trimer)
+#                                 C  
+#   between     E F G   and     F G
+#
+#   where "F" is the elbow for the H-trimer and "G" is the elbow for the
+#   L-trimer. The overlap occurs across the same row-span but in opposite
+#   directions:
+#
+#       F -> G for the H-trimer
+#       G -> F for the L-trimer
+
+NO_OVERLAP = 0
+BRIDGE = 1
+PEPTIDE = 2
+OPP_BRIDGE = 4
+OPP_PEPTIDE = 5
 
 WC_RE = re.compile("[\*]")
 
