@@ -358,7 +358,21 @@ class Span:
 
 
 class Trimer:
-    """
+    """A trimer is the fundamental feature with which each beta-matrix is
+    indexed.
+
+    BetaSearch defines five different types of trimers:
+        - L-trimer  (L-shaped trimer)
+        - V-trimer  (vertical trimer)
+        - H-trimer  (horizontal trimer)
+        - symmetric V-trimer
+        - symmetric H-trimer
+
+    each denoted by a constant, which are defined at the beginning of this file.
+
+    More detailed definitions of each trimer are given in our publication.
+    - see http://dx.doi.org/10.1186/1756-0500-5-391
+
     """
 
     def __init__(self, type_, seq, orient, elbow, span1, span2, num):
@@ -1109,6 +1123,9 @@ def update_disk_record(record, trimer):
 
 
 def line_to_matrix(line):
+    """
+    """
+
     line = line.strip()
 
     if len(line.split(":")) > 1:
@@ -1138,12 +1155,18 @@ def get_sheet_id(line):
     return ":".join(line.strip().split(":")[:2])
 
 
-def is_valid_matrix(mat):
-    print mat.shape
-
-
 def trimers_gen(mat):
-    """Generator over all the trimers in a beta-matrix.
+    """Generate all the trimers for a given beta-matrix.
+
+    Parameters
+    ----------
+    mat : numpy.ndarray
+        Beta-matrix as a 2D numpy array.
+
+    Yields
+    ------
+    Trimer
+        A Trimer object from `mat`.
 
     """
 
@@ -1178,9 +1201,7 @@ def trimers_gen(mat):
 
 
 def make_graph(line, verbose=False):
-    """
-
-    Arguments:
+    """Build a residue graph from a single-line representation of a beta-matrix.
 
     """
 
