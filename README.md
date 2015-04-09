@@ -132,8 +132,11 @@ python bin/make_index.py -d ./betasearch-index < ./bmats.txt
 The [bin/run_queries.py](bin/run_queries.py) script is used to run
 queries on a BetaSearch index:
 ```
-echo "query-XXX V.,LR" | python bin/run_queries -d ./betasearch-index # single query from stdin
-python bin/run_queries -d ./betasearch-index -q ./queries.txt # multiple queries from a file
+# run a single query from stdin
+echo "query-XXX V.,LR" | python bin/run_queries.py -d ./betasearch-index
+
+# run multiple queries from a file
+python bin/run_queries.py -d ./betasearch-index -q ./queries.txt
 ```
 where each query is formatted as a single line:
 ```
