@@ -62,6 +62,14 @@ conda install numpy biopython matplotlib whoosh pip
 pip install docopt
 ```
 
+#### DSSP
+
+BetaSearch uses `dssp` to obtain the secondary structure assignments of protein
+structures. The DSSP executable needs to be installed into your system path
+and renamed to `dssp`, it can be downloaded from:
+
+- ftp://ftp.cmbi.ru.nl/pub/software/dssp/
+
 
 
 ## Usage
