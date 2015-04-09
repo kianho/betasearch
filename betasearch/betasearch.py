@@ -158,14 +158,46 @@ AAS = "ARNDCQEGHILKMFPSTWYV"
 class Elbow:
     """This class stores the row and column indices of a trimer "elbow", which is
     the central residue in the trimer.
-    
-    For example, 'B' is the elbow of the L-trimer below:
 
-       0 1 2            
-      0. A .
-      1. B C
-         ^
-         :.. Elbow @ row 1, column 1
+    Examples
+    --------
+
+    For a hypothetical beta-matrix:
+
+                columns
+
+              0 1 2 3
+        r   0 A . C D
+        o   1 E F G H
+        w   2 I J . L
+        s
+
+    The L-trimer:
+
+        A
+        E F
+
+    has an elbow at "E" at row 1, column 0
+    i.e. Elbow(1, 0)
+
+
+    The H-trimer:
+
+        F G H
+
+    has an elbow at "G" at row 1, column 2
+    i.e. Elbow(1, 2)
+
+
+    The V-trimer:
+
+        D
+        H
+        L
+
+    has an elbow at "H" at row 1, column 3
+    i.e. Elbow(1, 3)
+
 
     """
 
@@ -188,18 +220,67 @@ class Elbow:
         self.col = col
 
     def same(self, other):
-        """Check if this elbow is in the same position as the other.  This
-        assumes that the parent trimers of both elbows are from the same
-        beta-matrix.
+        """Check if this elbow is in the same position as the other. See the
+        class docstring.
 
         """
-        return self.row == other.row and self.col == other.col
+        return (self.row == other.row) and (self.col == other.col)
 
 
 class Span:
     """This is a glorified tuple denoting the row or column extents of a given
     trimer. It is typically used to determine if two trimers overlap in a
     beta-matrix.
+
+    Examples
+    --------
+
+    For a hypothetical beta-matrix:
+
+                columns
+
+              0 1 2 3
+        r   0 A . C D
+        o   1 E F G H
+        w   2 I J . L
+        s
+
+    The L-trimer:
+
+        A
+        E F
+
+    spans
+        - columns 0 to 1    -> Span(0, 1)
+        - rows 1 to 0       -> Span(1, 0)
+
+
+    The H-trimer:
+
+        F G H
+
+    spans
+        - columns 1 to 2    -> Span(1, 2)
+        - columns 1 to 0    -> Span(1, 0)
+
+
+    The V-trimer:
+
+        D
+        H
+        L
+
+    spans
+        - rows 1 to 0       -> Span(1, 0)
+        - rows 1 to 2       -> Span(1, 2)
+
+
+    Note that each span has its own "direction", i.e.
+
+        Span(1, 0) != Span(0, 1)
+
+    despite both spans overlapping.
+        
 
     """
 
@@ -223,44 +304,44 @@ class Span:
         self.end = end
 
     def get_min(self):
+        """Return the smallest co-ordinate from the span.
+
+        """
         if self.begin < self.end:
             return self.begin
         return self.end
 
     def get_max(self):
+        """Return the largest co-ordinate from the span.
+
+        """
         if self.begin > self.end:
             return self.begin
         return self.end
 
     def get_reversed(self):
+        """Return a reversed copy of this span.
+
+        """
         return Span(self.end, self.begin)
 
     def get_tuple(self):
-        return (self.begin, self.end)
+        """Return a tuple representation of this span.
+
+        """
+        return self.begin, self.end
 
     def same_direction(self, other):
-        """Check if the "direction" of two  spans are the same. For L-trimers,
-        directions beginning from the elbow outwards, horizontally
-        (for column spans) or vertically for (row spans).
-
-        For example:
-
-                    trimer A        trimer B
-
-                                    +ve column span direction 
-                                    <-- .
-             +ve  ^ A               C B | -ve row span direction
-             row  | B C               A v
-             span . -->
-             dir.   -ve column span direction
-
-        Therefore, the corresponding row spans and column spans are in opposite
-        directions between both trimers.
+        """Check if the "direction" of two  spans are the same.
 
         """
         return ((self.begin - self.end) < 0) == ((other.begin - other.end) < 0)
 
     def overlaps(self, other):
+        """Returns True if this span overlaps with another, otherwise False. See
+        class docstring for more information.
+
+        """
         if self.begin == other.begin and self.end == other.end:
             return True
         if self.begin == other.end and self.end == other.begin:
