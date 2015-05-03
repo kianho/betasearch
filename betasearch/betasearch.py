@@ -616,12 +616,17 @@ class Query:
     def __init__(self, line):
         """Constructor.
 
+        Parameters
+        ----------
+        line : str
+            Single-line string representation of the query beta-matrix.
+
         """
 
         if len(line.split(":")) == 1:
-          self._line = line
+            self._line = line
         else:
-          self._line = line.split(":")[-1]
+            self._line = line.split(":")[-1]
 
         self._line = line.strip()
         self._first_l_trimer = None
@@ -634,12 +639,17 @@ class Query:
         return
 
     def _init_matrix(self):
+        """Initialise the beta-matrix of the query.
+
+        """
         self._mat = numpy.array(map(lambda row : list(row),
                                 self._line.split(":")[-1].strip().split(",")))
         return
 
     def _build_trimer_structs(self):
-        """
+        """Build the query trimers and index them according to their bridge and
+        peptide overlap coordinates.
+
         """
 
         trimers = []
@@ -684,6 +694,7 @@ class Query:
 
         G = nx.DiGraph()
 
+        # Build the bridge trimer overlaps.
         for val in self._bridges.itervalues():
             for trimers in val.itervalues():
                 for i in xrange(len(trimers)):
@@ -700,7 +711,7 @@ class Query:
                                    rel_orient=des.orient ^ src.orient,
                                    overlap_type=des.get_overlap_type(src))
 
-
+        # Add the peptide trimer overlaps.
         for val in self._peptides.itervalues():
             for trimers in val.itervalues():
                 for i in xrange(len(trimers)):
@@ -722,6 +733,15 @@ class Query:
         return
 
     def get_whoosh_query_str(self, disjunctive=False):
+        """Build the Whoosh string query co-inciding with the query beta-matrix.
+
+        Parameters
+        ----------
+        disjunctive : bool
+            Set to True for a disjunctive query of trimers, False otherwise.
+
+        """
+
         if disjunctive:
             operator = " OR "
         else:
@@ -768,6 +788,9 @@ class Query:
         return
 
     def verify(self, results, trimers_dir):
+        """
+        """
+
         if len(results) == 0:
             return
 
